@@ -107,7 +107,8 @@ export default function ViewEntryScreen() {
                         text: "Delete",
                         style: "destructive",
                         onPress: async () => {
-                          await supabase
+                          console.log("Confirmed delete");
+                          const { error } = await supabase
                             .from("journal_entries")
                             .update({ deleted: true })
                             .eq("id", entry.id);
@@ -117,7 +118,9 @@ export default function ViewEntryScreen() {
                               message: "Entry deleted",
                               type: "success",
                             });
-                            navigation.goBack;
+                            setTimeout(() => {
+                              navigation.goBack();
+                            }, 500);
                           } else {
                             console.error("Delete failed:", error);
                           }
