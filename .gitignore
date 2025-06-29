@@ -35,3 +35,7 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+node_modules
+assets/*.mp4
+assets/*.png
