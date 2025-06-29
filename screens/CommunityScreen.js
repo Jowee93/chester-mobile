@@ -1,3 +1,4 @@
+// screens/CommunityScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -9,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height, width } = Dimensions.get("window");
 
@@ -36,6 +38,10 @@ const dummyCommunityPosts = [
     content:
       "I’m not sure what I’m working toward anymore. Everything feels slow.",
   },
+  {
+    id: "end",
+    type: "end",
+  },
 ];
 
 export default function CommunityScreen() {
@@ -46,66 +52,84 @@ export default function CommunityScreen() {
     setResonated((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.postContainer}>
-      <TouchableOpacity
-        style={{ flex: 1 }}
-        onPress={() =>
-          navigation.navigate("NewEntry", {
-            editable: false,
-            title: item.title,
-            content: item.content,
-            images: [],
-          })
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.username}>{item.username}</Text>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
+  const renderItem = ({ item }) => {
+    if (item.type === "end") {
+      return (
+        <View style={styles.postContainer}>
+          <Text style={styles.endText}>
+            ✨ That’s all the posts for today ✨
+          </Text>
         </View>
+      );
+    }
 
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.content}>{item.content}</Text>
-
-        <View style={styles.footer}>
-          <View style={styles.tags}>
-            {item.tags.map((tag, idx) => (
-              <Text key={idx} style={styles.tag}>
-                {tag}
-              </Text>
-            ))}
+    return (
+      <View style={styles.postContainer}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() =>
+            navigation.navigate("ViewEntry", {
+              title: item.title,
+              content: item.content,
+              images: [],
+              username: item.username,
+              tags: item.tags,
+            })
+          }
+        >
+          <View style={styles.header}>
+            <Text style={styles.username}>{item.username}</Text>
+            <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
           </View>
-          <TouchableOpacity
-            onPress={() => toggleResonate(item.id)}
-            style={styles.resonateBtn}
-          >
-            <Ionicons
-              name={resonated[item.id] ? "heart" : "heart-outline"}
-              size={24}
-              color={resonated[item.id] ? "#ff7da0" : "#a48bff"}
-            />
-            <Text style={styles.resonateText}>Resonate</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
+
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.content}>{item.content}</Text>
+
+          <View style={styles.footer}>
+            <View style={styles.tags}>
+              {item.tags.map((tag, idx) => (
+                <Text key={idx} style={styles.tag}>
+                  {tag}
+                </Text>
+              ))}
+            </View>
+            <TouchableOpacity
+              onPress={() => toggleResonate(item.id)}
+              style={styles.resonateBtn}
+            >
+              <Ionicons
+                name={resonated[item.id] ? "heart" : "heart-outline"}
+                size={24}
+                color={resonated[item.id] ? "#ff7da0" : "#a48bff"}
+              />
+              <Text style={styles.resonateText}>Resonate</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
-    <FlatList
-      data={dummyCommunityPosts}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      pagingEnabled
-      showsVerticalScrollIndicator={false}
-      snapToAlignment="start"
-      decelerationRate="fast"
-      getItemLayout={(data, index) => ({
-        length: height,
-        offset: height * index,
-        index,
-      })}
-    />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
+      <View style={styles.headerBar}>
+        <Text style={styles.headerText}>Community</Text>
+      </View>
+      <FlatList
+        data={dummyCommunityPosts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        getItemLayout={(data, index) => ({
+          length: height,
+          offset: height * index,
+          index,
+        })}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -116,6 +140,16 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: "#0e0b1f",
     justifyContent: "space-between",
+  },
+  headerBar: {
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  headerText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
   },
   header: {
     flexDirection: "row",
@@ -162,5 +196,11 @@ const styles = StyleSheet.create({
     color: "#a48bff",
     marginLeft: 6,
     fontSize: 14,
+  },
+  endText: {
+    color: "#aaa",
+    fontSize: 18,
+    textAlign: "center",
+    marginTop: 100,
   },
 });
