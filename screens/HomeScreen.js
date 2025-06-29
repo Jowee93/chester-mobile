@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  FlatList,
+} from "react-native";
 import { TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
@@ -7,6 +14,11 @@ import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen({ navigation }) {
   const [entries, setEntries] = useState([]);
+  const [stats, setStats] = useState({
+    entriesThisYear: 0,
+    totalWords: 0,
+    daysJournaled: 0,
+  });
 
   useFocusEffect(
     React.useCallback(() => {
@@ -19,6 +31,25 @@ export default function HomeScreen({ navigation }) {
 
         if (!error && data) {
           setEntries(data);
+
+          const currentYear = new Date().getFullYear();
+          const words = data.reduce(
+            (acc, entry) => acc + entry.content.split(" ").length,
+            0
+          );
+          const uniqueDays = new Set(
+            data.map((entry) => new Date(entry.created_at).toDateString())
+          );
+
+          const entriesThisYear = data.filter(
+            (entry) => new Date(entry.created_at).getFullYear() === currentYear
+          ).length;
+
+          setStats({
+            entriesThisYear,
+            totalWords: words,
+            daysJournaled: uniqueDays.size,
+          });
         } else {
           console.error("Failed to fetch entries:", error);
         }
@@ -39,47 +70,51 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>Journal</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Journal</Text>
+      </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{entries.length}</Text>
-            <Text style={styles.statLabel}>Entry This Year</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>--</Text>
-            <Text style={styles.statLabel}>Words Written</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>--</Text>
-            <Text style={styles.statLabel}>Day Journaled</Text>
-          </View>
-        </View>
-
-        <Text style={styles.month}>Recent</Text>
-
-        {entries.map((entry) => (
+      <FlatList
+        data={entries}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.content}
+        renderItem={({ item }) => (
           <TouchableOpacity
-            key={entry.id}
             onPress={() =>
-              navigation.navigate("ViewEntry", { entryId: entry.id })
+              navigation.navigate("ViewEntry", {
+                entryId: item.id,
+                source: "journal",
+              })
             }
           >
             <View style={styles.card}>
-              <Text style={styles.entryTitle} numberOfLines={1}>
-                {entry.title || entry.content.slice(0, 20) + "..."}
-              </Text>
+              <Text style={styles.entryTitle}>{item.title}</Text>
               <Text style={styles.entryContent} numberOfLines={2}>
-                {entry.content}
+                {item.content}
               </Text>
               <Text style={styles.entryDate}>
-                {formatDate(entry.created_at)}
+                {new Date(item.created_at).toLocaleDateString()}
               </Text>
             </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        )}
+        ListHeaderComponent={
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{stats.entriesThisYear}</Text>
+              <Text style={styles.statLabel}>Entry This Year</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{stats.totalWords}</Text>
+              <Text style={styles.statLabel}>Words Written</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{stats.daysJournaled}</Text>
+              <Text style={styles.statLabel}>Day Journaled</Text>
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -120,4 +155,19 @@ const styles = StyleSheet.create({
   },
   entryContent: { color: "white", fontSize: 14, marginBottom: 8 },
   entryDate: { color: "#999", fontSize: 12, textAlign: "left" },
+  header: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    alignItems: "center",
+    backgroundColor: "#0e0b1f",
+  },
+  headerText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
 });
