@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +17,15 @@ import {
   useFocusEffect,
 } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+  MenuProvider,
+} from "react-native-popup-menu";
+import { showMessage } from "react-native-flash-message";
 
 export default function ViewEntryScreen() {
   const route = useRoute();
@@ -25,6 +35,8 @@ export default function ViewEntryScreen() {
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
   const source = route.params?.source || "journal";
+
+  const { showActionSheetWithOptions } = useActionSheet();
 
   useFocusEffect(
     useCallback(() => {
@@ -52,54 +64,105 @@ export default function ViewEntryScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
-      <View style={styles.topBar}>
-        <Text style={styles.username}>You</Text>
-        <TouchableOpacity
-          onPress={() => {
-            if (source !== "community") {
-              navigation.navigate("NewEntry", {
-                editable: true,
-                title: entry.title,
-                content: entry.content,
-                entryId: entry.id,
-              });
-            }
-          }}
-        >
-          <Ionicons name="ellipsis-horizontal" size={24} color="#a48bff" />
-        </TouchableOpacity>
-      </View>
+    <MenuProvider style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
+        <View style={styles.topBar}>
+          <Text style={styles.username}>You</Text>
+          <Menu>
+            <MenuTrigger
+              customStyles={{
+                TriggerTouchableComponent: TouchableOpacity,
+                triggerTouchable: {
+                  activeOpacity: 0.6,
+                },
+              }}
+            >
+              <Ionicons name="ellipsis-horizontal" size={24} color="#a48bff" />
+            </MenuTrigger>
+            <MenuOptions
+              customStyles={{
+                optionsContainer: { backgroundColor: "#1a162d" },
+              }}
+            >
+              <MenuOption
+                onSelect={() =>
+                  navigation.navigate("NewEntry", {
+                    editable: true,
+                    title: entry.title,
+                    content: entry.content,
+                    entryId: entry.id,
+                  })
+                }
+              >
+                <Text style={{ color: "white", padding: 10 }}>Edit</Text>
+              </MenuOption>
+              <MenuOption
+                onSelect={() => {
+                  Alert.alert(
+                    "Delete Entry",
+                    "Are you sure you want to delete this journal entry?",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: async () => {
+                          await supabase
+                            .from("journal_entries")
+                            .update({ deleted: true })
+                            .eq("id", entry.id);
 
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color="#a48bff" size="large" />
+                          if (!error) {
+                            showMessage({
+                              message: "Entry deleted",
+                              type: "success",
+                            });
+                            navigation.goBack;
+                          } else {
+                            console.error("Delete failed:", error);
+                          }
+                        },
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text style={{ color: "red", padding: 10 }}>Delete</Text>
+              </MenuOption>
+            </MenuOptions>
+          </Menu>
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          {entry.title && <Text style={styles.title}>{entry.title}</Text>}
-          <Text style={styles.content}>{entry.content}</Text>
-          {entry.mood && <Text style={styles.tag}>{entry.mood}</Text>}
-          {entry.demographics && (
-            <Text style={styles.tag}>{entry.demographics}</Text>
-          )}
 
-          {entry.ai_reflection && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>AI Reflection</Text>
-              <Text style={styles.sectionText}>{entry.ai_reflection}</Text>
-            </View>
-          )}
+        {loading ? (
+          <View style={styles.loader}>
+            <ActivityIndicator color="#a48bff" size="large" />
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.contentContainer}>
+            {entry.title && <Text style={styles.title}>{entry.title}</Text>}
+            <Text style={styles.content}>{entry.content}</Text>
+            {entry.mood && <Text style={styles.tag}>{entry.mood}</Text>}
+            {entry.demographics && (
+              <Text style={styles.tag}>{entry.demographics}</Text>
+            )}
 
-          {entry.ai_analysis && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>AI Analysis</Text>
-              <Text style={styles.sectionText}>{entry.ai_analysis}</Text>
-            </View>
-          )}
-        </ScrollView>
-      )}
-    </SafeAreaView>
+            {entry.ai_reflection && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>AI Reflection</Text>
+                <Text style={styles.sectionText}>{entry.ai_reflection}</Text>
+              </View>
+            )}
+
+            {entry.ai_analysis && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>AI Analysis</Text>
+                <Text style={styles.sectionText}>{entry.ai_analysis}</Text>
+              </View>
+            )}
+          </ScrollView>
+        )}
+      </SafeAreaView>
+    </MenuProvider>
   );
 }
 
