@@ -56,56 +56,60 @@ export default function CommunityScreen() {
     if (item.type === "end") {
       return (
         <View style={styles.postContainer}>
-          <Text style={styles.endText}>
-            ✨ That’s all the posts for today ✨
-          </Text>
+          <View style={styles.card}>
+            <Text style={styles.endText}>
+              ✨ That’s all the posts for today ✨
+            </Text>
+          </View>
         </View>
       );
     }
 
     return (
       <View style={styles.postContainer}>
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          onPress={() =>
-            navigation.navigate("ViewEntry", {
-              title: item.title,
-              content: item.content,
-              images: [],
-              username: item.username,
-              tags: item.tags,
-            })
-          }
-        >
-          <View style={styles.header}>
-            <Text style={styles.username}>{item.username}</Text>
-            <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
-          </View>
-
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.content}>{item.content}</Text>
-
-          <View style={styles.footer}>
-            <View style={styles.tags}>
-              {item.tags.map((tag, idx) => (
-                <Text key={idx} style={styles.tag}>
-                  {tag}
-                </Text>
-              ))}
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() =>
+              navigation.navigate("ViewEntry", {
+                title: item.title,
+                content: item.content,
+                images: [],
+                username: item.username,
+                tags: item.tags,
+              })
+            }
+          >
+            <View style={styles.header}>
+              <Text style={styles.username}>{item.username}</Text>
+              <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
             </View>
-            <TouchableOpacity
-              onPress={() => toggleResonate(item.id)}
-              style={styles.resonateBtn}
-            >
-              <Ionicons
-                name={resonated[item.id] ? "heart" : "heart-outline"}
-                size={24}
-                color={resonated[item.id] ? "#ff7da0" : "#a48bff"}
-              />
-              <Text style={styles.resonateText}>Resonate</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.content}>{item.content}</Text>
+
+            <View style={styles.footer}>
+              <View style={styles.tags}>
+                {item.tags.map((tag, idx) => (
+                  <Text key={idx} style={styles.tag}>
+                    {tag}
+                  </Text>
+                ))}
+              </View>
+              <TouchableOpacity
+                onPress={() => toggleResonate(item.id)}
+                style={styles.resonateBtn}
+              >
+                <Ionicons
+                  name={resonated[item.id] ? "heart" : "heart-outline"}
+                  size={24}
+                  color={resonated[item.id] ? "#ff7da0" : "#a48bff"}
+                />
+                <Text style={styles.resonateText}>Resonate</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -119,15 +123,7 @@ export default function CommunityScreen() {
         data={dummyCommunityPosts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        getItemLayout={(data, index) => ({
-          length: height,
-          offset: height * index,
-          index,
-        })}
       />
     </SafeAreaView>
   );
@@ -135,11 +131,21 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   postContainer: {
-    height,
-    width,
-    padding: 24,
-    backgroundColor: "#0e0b1f",
-    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: "#1a162d",
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   headerBar: {
     alignItems: "center",
@@ -154,7 +160,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 40,
+    marginBottom: 16,
   },
   username: {
     color: "#a48bff",
@@ -165,15 +171,14 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 20,
     fontWeight: "600",
-    marginTop: 40,
+    marginBottom: 12,
   },
   content: {
     color: "#ccc",
     fontSize: 16,
-    marginTop: 12,
+    marginBottom: 20,
   },
   footer: {
-    marginBottom: 40,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -201,6 +206,5 @@ const styles = StyleSheet.create({
     color: "#aaa",
     fontSize: 18,
     textAlign: "center",
-    marginTop: 100,
   },
 });
