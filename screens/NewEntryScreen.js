@@ -1,3 +1,4 @@
+// screens/NewEntryScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -6,12 +7,18 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  TouchableOpacity,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRoute } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
 export default function NewEntryScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
   const isEditable = route.params?.editable !== false;
 
   const [title, setTitle] = useState(route.params?.title || "");
@@ -19,63 +26,95 @@ export default function NewEntryScreen() {
   const [images, setImages] = useState(route.params?.images || []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Ionicons name="bookmark-outline" size={24} color="#a48bff" />
-        <Text style={styles.dateText}>Sunday, 29 Jun</Text>
-        <View style={styles.topRight}>
-          <Ionicons name="ellipsis-horizontal" size={24} color="white" />
-          {isEditable && <Text style={styles.doneText}>Done</Text>}
-        </View>
-      </View>
-
-      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-        {images.length > 0 && (
-          <View style={styles.imageGrid}>
-            {images.map((img, idx) => (
-              <Image key={idx} source={img} style={styles.image} />
-            ))}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={{ flex: 1 }}>
+          {/* Top Bar */}
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back-outline" size={24} color="#a48bff" />
+            </TouchableOpacity>
+            <Text style={styles.dateText}>Sunday, 29 Jun</Text>
+            <View style={styles.topRight}>
+              {isEditable ? (
+                <>
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={24}
+                    color="white"
+                  />
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Text style={styles.doneText}>Done</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.replace("NewEntry", {
+                      editable: true,
+                      title,
+                      content,
+                      images,
+                    })
+                  }
+                >
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={24}
+                    color="#a48bff"
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        )}
 
-        {isEditable ? (
-          <TextInput
-            style={styles.titleInput}
-            placeholder="Title"
-            placeholderTextColor="#aaa"
-            value={title}
-            onChangeText={setTitle}
-          />
-        ) : (
-          <Text style={styles.titleRead}>{title}</Text>
-        )}
+          <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+            {images.length > 0 && (
+              <View style={styles.imageGrid}>
+                {images.map((img, idx) => (
+                  <Image key={idx} source={img} style={styles.image} />
+                ))}
+              </View>
+            )}
 
-        {isEditable ? (
-          <TextInput
-            style={styles.contentInput}
-            placeholder="Start writing..."
-            placeholderTextColor="#aaa"
-            value={content}
-            onChangeText={setContent}
-            multiline
-          />
-        ) : (
-          <Text style={styles.contentRead}>{content}</Text>
-        )}
-      </ScrollView>
+            <TextInput
+              style={isEditable ? styles.titleInput : styles.titleRead}
+              placeholder="Title"
+              placeholderTextColor="#aaa"
+              value={title}
+              onChangeText={setTitle}
+              editable={isEditable}
+            />
 
-      {isEditable && (
-        <View style={styles.toolbar}>
-          <Ionicons name="text" size={22} color="#ccc" />
-          <MaterialCommunityIcons name="wand" size={22} color="#ccc" />
-          <Ionicons name="image-outline" size={22} color="#ccc" />
-          <Ionicons name="camera-outline" size={22} color="#ccc" />
-          <Ionicons name="mic-outline" size={22} color="#ccc" />
-          <Ionicons name="location-outline" size={22} color="#ccc" />
-          <Ionicons name="flower-outline" size={22} color="#ccc" />
+            <TextInput
+              style={isEditable ? styles.contentInput : styles.contentRead}
+              placeholder="Start writing..."
+              placeholderTextColor="#aaa"
+              value={content}
+              onChangeText={setContent}
+              multiline
+              editable={isEditable}
+              autoFocus={isEditable}
+            />
+          </ScrollView>
+
+          {isEditable && (
+            <View style={styles.toolbar}>
+              <Ionicons name="text" size={22} color="#ccc" />
+              <Ionicons name="sparkles-outline" size={22} color="#ccc" />
+              <Ionicons name="image-outline" size={22} color="#ccc" />
+              <Ionicons name="camera-outline" size={22} color="#ccc" />
+              <Ionicons name="mic-outline" size={22} color="#ccc" />
+              <Ionicons name="location-outline" size={22} color="#ccc" />
+              <Ionicons name="flower-outline" size={22} color="#ccc" />
+            </View>
+          )}
         </View>
-      )}
-    </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 

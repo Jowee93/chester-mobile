@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import { TouchableOpacity } from "react-native"; // Add this if not already
 
 const dummyEntries = [
   {
@@ -39,16 +40,28 @@ export default function HomeScreen({ navigation }) {
       <Text style={styles.month}>June</Text>
 
       {dummyEntries.map((entry) => (
-        <View key={entry.id} style={styles.card}>
-          <View style={styles.imageGrid}>
-            {entry.images.map((img, index) => (
-              <Image key={index} source={img} style={styles.image} />
-            ))}
+        <TouchableOpacity
+          key={entry.id}
+          onPress={() =>
+            navigation.navigate("NewEntry", {
+              editable: false,
+              title: entry.title,
+              content: entry.content,
+              images: entry.images,
+            })
+          }
+        >
+          <View style={styles.card}>
+            <View style={styles.imageGrid}>
+              {entry.images.map((img, index) => (
+                <Image key={index} source={img} style={styles.image} />
+              ))}
+            </View>
+            <Text style={styles.entryTitle}>{entry.title}</Text>
+            <Text style={styles.entryContent}>{entry.content}</Text>
+            <Text style={styles.entryDate}>{entry.date}</Text>
           </View>
-          <Text style={styles.entryTitle}>{entry.title}</Text>
-          <Text style={styles.entryContent}>{entry.content}</Text>
-          <Text style={styles.entryDate}>{entry.date}</Text>
-        </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
