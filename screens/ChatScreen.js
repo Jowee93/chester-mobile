@@ -14,30 +14,42 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import openai from "../lib/openai";
+import { supabase } from "../lib/supabase";
 
 export default function ChatScreen() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      from: "chester",
-      text: "Hi there 👋 How are you feeling today?",
-    },
-    {
-      id: "2",
-      from: "user",
-      text: "Not great, honestly. Felt really drained after work.",
-    },
-    {
-      id: "3",
-      from: "chester",
-      text: "Thanks for sharing. Want to tell me more about what happened?",
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
 
-  const sendMessage = () => {
+  const userId = 1; // Replace with real auth later
+
+  // Load past messages from Supabase
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        const formatted = data.map((msg) => ({
+          id: msg.id.toString(),
+          from: msg.is_from_ai ? "chester" : "user",
+          text: msg.content,
+        }));
+        setMessages(formatted);
+      } else {
+        console.error("Failed to load messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, []);
+
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
     const newMessage = {
@@ -50,28 +62,68 @@ export default function ChatScreen() {
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const reply = {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are Chester, a calm and empathetic journaling companion. Speak like a supportive friend. Keep replies concise, warm, and human.",
+          },
+          {
+            role: "user",
+            content: input.trim(),
+          },
+        ],
+      });
+
+      const replyText = response.choices[0].message.content.trim();
+
+      const chesterReply = {
         id: (Date.now() + 1).toString(),
         from: "chester",
-        text: "I'm here with you. Want to reflect on why that might’ve felt so draining?",
+        text: replyText,
       };
 
-      setMessages((prev) => [...prev, reply]);
-      setIsTyping(false);
+      setMessages((prev) => [...prev, chesterReply]);
 
-      // 🟣 Scroll to latest after Chester replies
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 300);
-    }, 1200); // Simulated typing delay
+      // Save both user and Chester messages to Supabase
+      await supabase.from("chat_messages").insert([
+        {
+          user_id: userId,
+          content: newMessage.text,
+          is_from_ai: false,
+        },
+        {
+          user_id: userId,
+          content: replyText,
+          is_from_ai: true,
+        },
+      ]);
+    } catch (err) {
+      console.error("OpenAI error:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          from: "chester",
+          text: "Sorry, something went wrong. Try again shortly.",
+        },
+      ]);
+    }
+
+    setIsTyping(false);
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 300);
   };
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100); // Small delay ensures input bar is rendered first
-
+    }, 100);
     return () => clearTimeout(timeout);
   }, [messages, isTyping]);
 
@@ -107,7 +159,6 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
       >
         <View style={styles.header}>
           <Text style={styles.headerText}>Chatting with Chester</Text>
