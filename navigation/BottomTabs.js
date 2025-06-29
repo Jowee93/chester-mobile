@@ -29,7 +29,7 @@ export default function BottomTabs() {
           if (route.name === "Home") iconName = "home";
           else if (route.name === "Chat") iconName = "chatbubble-ellipses";
           else if (route.name === "Community") iconName = "people";
-          else if (route.name === "Insights") iconName = "bar-chart";
+          else if (route.name === "Profile") iconName = "person-circle-outline"; // ✅ Add this
           return iconName ? (
             <Ionicons
               name={iconName}
@@ -64,7 +64,7 @@ export default function BottomTabs() {
       />
 
       <Tab.Screen name="Community" component={CommunityScreen} />
-      <Tab.Screen name="Insights" component={InsightsScreen} />
+      <Tab.Screen name="Profile" component={InsightsScreen} />
     </Tab.Navigator>
   );
 }
