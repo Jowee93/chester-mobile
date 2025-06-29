@@ -67,7 +67,7 @@ export default function NewEntryScreen() {
       {isEditable && (
         <View style={styles.toolbar}>
           <Ionicons name="text" size={22} color="#ccc" />
-          <MaterialCommunityIcons name="magic" size={22} color="#ccc" />
+          <MaterialCommunityIcons name="wand" size={22} color="#ccc" />
           <Ionicons name="image-outline" size={22} color="#ccc" />
           <Ionicons name="camera-outline" size={22} color="#ccc" />
           <Ionicons name="mic-outline" size={22} color="#ccc" />
