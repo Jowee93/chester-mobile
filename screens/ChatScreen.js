@@ -1,5 +1,5 @@
 // screens/ChatScreen.js
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,10 @@ import {
   StyleSheet,
   FlatList,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
+  Image,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -31,17 +34,46 @@ export default function ChatScreen() {
       text: "Thanks for sharing. Want to tell me more about what happened?",
     },
   ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const flatListRef = useRef(null);
 
   const sendMessage = () => {
     if (!input.trim()) return;
+
     const newMessage = {
       id: Date.now().toString(),
       from: "user",
       text: input.trim(),
     };
+
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      const reply = {
+        id: (Date.now() + 1).toString(),
+        from: "chester",
+        text: "I'm here with you. Want to reflect on why that might’ve felt so draining?",
+      };
+
+      setMessages((prev) => [...prev, reply]);
+      setIsTyping(false);
+
+      // 🟣 Scroll to latest after Chester replies
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 300);
+    }, 1200); // Simulated typing delay
   };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100); // Small delay ensures input bar is rendered first
+
+    return () => clearTimeout(timeout);
+  }, [messages, isTyping]);
 
   const renderItem = ({ item }) => {
     const isUser = item.from === "user";
@@ -52,6 +84,12 @@ export default function ChatScreen() {
           isUser ? styles.userAlign : styles.chesterAlign,
         ]}
       >
+        {!isUser && (
+          <Image
+            source={require("../assets/chester-avatar.png")}
+            style={styles.avatar}
+          />
+        )}
         <View
           style={[
             styles.bubble,
@@ -65,43 +103,75 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.chatContainer}
-      />
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Chatting with Chester</Text>
+        </View>
 
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#888"
-          value={input}
-          onChangeText={setInput}
-          multiline
+        <FlatList
+          ref={flatListRef}
+          data={messages.concat(
+            isTyping
+              ? [
+                  {
+                    id: "typing",
+                    from: "chester",
+                    text: "Chester is typing...",
+                  },
+                ]
+              : []
+          )}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.chatContainer}
         />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Ionicons name="arrow-up-circle" size={28} color="#a48bff" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+
+        <View style={styles.inputBar}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor="#888"
+            value={input}
+            onChangeText={setInput}
+            multiline
+          />
+          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+            <Ionicons name="arrow-up-circle" size={28} color="#a48bff" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#0e0b1f",
   },
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2e2b3f",
+    backgroundColor: "#0e0b1f",
+    alignItems: "center",
+  },
+  headerText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   chatContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 12,
   },
   messageRow: {
     marginBottom: 12,
@@ -110,9 +180,17 @@ const styles = StyleSheet.create({
   },
   userAlign: {
     justifyContent: "flex-end",
+    alignSelf: "flex-end",
   },
   chesterAlign: {
     justifyContent: "flex-start",
+    alignSelf: "flex-start",
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 8,
   },
   bubble: {
     paddingVertical: 10,
@@ -133,10 +211,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   inputBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
