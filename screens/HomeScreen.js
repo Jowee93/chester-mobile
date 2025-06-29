@@ -1,24 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
-import { TouchableOpacity } from "react-native"; // Add this if not already
+import { TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const dummyEntries = [
-  {
-    id: "1",
-    title: "A day for pasta",
-    content:
-      "Queued 1 hour to enter this pasta bar near amoy street. Was really good but kinda bummer that there are no meat",
-    date: "Sunday, 15 Jun",
-    images: [
-      require("../assets/icon.png"),
-      require("../assets/icon.png"),
-      require("../assets/icon.png"),
-    ],
-  },
-];
+import { supabase } from "../lib/supabase";
 
 export default function HomeScreen({ navigation }) {
+  const [entries, setEntries] = useState([]);
+
+  useEffect(() => {
+    const fetchEntries = async () => {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("id, content, created_at")
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setEntries(data);
+      } else {
+        console.error("Failed to fetch entries:", error);
+      }
+    };
+
+    fetchEntries();
+  }, []);
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
@@ -26,42 +40,38 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{entries.length}</Text>
             <Text style={styles.statLabel}>Entry This Year</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>26</Text>
+            <Text style={styles.statNumber}>--</Text>
             <Text style={styles.statLabel}>Words Written</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>--</Text>
             <Text style={styles.statLabel}>Day Journaled</Text>
           </View>
         </View>
 
-        <Text style={styles.month}>June</Text>
+        <Text style={styles.month}>Recent</Text>
 
-        {dummyEntries.map((entry) => (
+        {entries.map((entry) => (
           <TouchableOpacity
             key={entry.id}
             onPress={() =>
-              navigation.navigate("NewEntry", {
-                editable: false,
-                title: entry.title,
-                content: entry.content,
-                images: entry.images,
-              })
+              navigation.navigate("ViewEntry", { entryId: entry.id })
             }
           >
             <View style={styles.card}>
-              <View style={styles.imageGrid}>
-                {entry.images.map((img, index) => (
-                  <Image key={index} source={img} style={styles.image} />
-                ))}
-              </View>
-              <Text style={styles.entryTitle}>{entry.title}</Text>
-              <Text style={styles.entryContent}>{entry.content}</Text>
-              <Text style={styles.entryDate}>{entry.date}</Text>
+              <Text style={styles.entryTitle} numberOfLines={1}>
+                {entry.content.slice(0, 20)}...
+              </Text>
+              <Text style={styles.entryContent} numberOfLines={2}>
+                {entry.content}
+              </Text>
+              <Text style={styles.entryDate}>
+                {formatDate(entry.created_at)}
+              </Text>
             </View>
           </TouchableOpacity>
         ))}

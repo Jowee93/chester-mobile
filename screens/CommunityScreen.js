@@ -1,5 +1,5 @@
 // screens/CommunityScreen.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,45 +11,36 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { supabase } from "../lib/supabase";
 
 const { height, width } = Dimensions.get("window");
 
-const dummyCommunityPosts = [
-  {
-    id: "1",
-    username: "@mindful_fox",
-    tags: ["#burnout", "#career"],
-    title: "Feeling empty after work",
-    content:
-      "I hit every goal but still feel drained. I thought I would be happy...",
-  },
-  {
-    id: "2",
-    username: "@calmkoala",
-    tags: ["#breakup", "#healing"],
-    title: "Day 14 of letting go",
-    content: "Each morning is lighter. Journaling helps me stay grounded...",
-  },
-  {
-    id: "3",
-    username: "@latebloomer",
-    tags: ["#purpose", "#stuck"],
-    title: "Quarter-life pause",
-    content:
-      "I’m not sure what I’m working toward anymore. Everything feels slow.",
-  },
-  {
-    id: "end",
-    type: "end",
-  },
-];
-
 export default function CommunityScreen() {
   const navigation = useNavigation();
+  const [posts, setPosts] = useState([]);
   const [resonated, setResonated] = useState({});
 
-  const toggleResonate = (id) => {
+  useEffect(() => {
+    const fetchCommunityPosts = async () => {
+      const { data, error } = await supabase
+        .from("community_entries")
+        .select("id, content, mood, demographics, supports, created_at")
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        const postsWithType = [...data, { id: "end", type: "end" }];
+        setPosts(postsWithType);
+      } else {
+        console.error("Failed to fetch community posts:", error);
+      }
+    };
+
+    fetchCommunityPosts();
+  }, []);
+
+  const toggleResonate = async (id) => {
     setResonated((prev) => ({ ...prev, [id]: !prev[id] }));
+    await supabase.rpc("increment_supports", { post_id: id });
   };
 
   const renderItem = ({ item }) => {
@@ -72,29 +63,21 @@ export default function CommunityScreen() {
             style={{ flex: 1 }}
             onPress={() =>
               navigation.navigate("ViewEntry", {
-                title: item.title,
-                content: item.content,
-                images: [],
-                username: item.username,
-                tags: item.tags,
+                entryId: item.id,
               })
             }
           >
             <View style={styles.header}>
-              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.username}>Anonymous</Text>
               <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
             </View>
 
-            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.title}>{item.mood}</Text>
             <Text style={styles.content}>{item.content}</Text>
 
             <View style={styles.footer}>
               <View style={styles.tags}>
-                {item.tags.map((tag, idx) => (
-                  <Text key={idx} style={styles.tag}>
-                    {tag}
-                  </Text>
-                ))}
+                <Text style={styles.tag}>{item.demographics}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => toggleResonate(item.id)}
@@ -120,9 +103,9 @@ export default function CommunityScreen() {
         <Text style={styles.headerText}>Community</Text>
       </View>
       <FlatList
-        data={dummyCommunityPosts}
+        data={posts}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>

@@ -12,9 +12,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { supabase } from "../lib/supabase";
 
 export default function NewEntryScreen() {
   const route = useRoute();
@@ -24,7 +26,30 @@ export default function NewEntryScreen() {
   const [title, setTitle] = useState(route.params?.title || "");
   const [content, setContent] = useState(route.params?.content || "");
   const [images, setImages] = useState(route.params?.images || []);
-  const [showMenu, setShowMenu] = useState(false);
+
+  const handleSave = async () => {
+    if (!content.trim()) {
+      Alert.alert("Entry is empty", "Please write something before saving.");
+      return;
+    }
+
+    const { error } = await supabase.from("journal_entries").insert([
+      {
+        user_id: 1, // TEMP: replace with real user ID later
+        content,
+        mood: "neutral", // TEMP: replace with real mood later
+        ai_analysis: null,
+        ai_reflection: null,
+      },
+    ]);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      Alert.alert("Error", "Failed to save entry.");
+    } else {
+      navigation.goBack();
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -47,7 +72,7 @@ export default function NewEntryScreen() {
                     size={24}
                     color="white"
                   />
-                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <TouchableOpacity onPress={handleSave}>
                     <Text style={styles.doneText}>Done</Text>
                   </TouchableOpacity>
                 </>
