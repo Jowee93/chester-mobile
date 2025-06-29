@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: "center",
   },
+
   card: {
     backgroundColor: "#1a162d",
     borderRadius: 20,
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
+
   headerBar: {
     alignItems: "center",
     paddingTop: 10,
