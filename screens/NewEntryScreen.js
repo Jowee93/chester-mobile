@@ -28,24 +28,34 @@ export default function NewEntryScreen() {
   const [images, setImages] = useState(route.params?.images || []);
 
   const handleSave = async () => {
-    if (!content.trim()) {
-      Alert.alert("Entry is empty", "Please write something before saving.");
-      return;
+    if (!content.trim()) return;
+
+    const entry = {
+      user_id: 1, // TEMP
+      title,
+      content,
+      mood: "neutral",
+    };
+
+    let error;
+
+    if (route.params?.entryId) {
+      // UPDATE
+      const { error: updateError } = await supabase
+        .from("journal_entries")
+        .update(entry)
+        .eq("id", route.params.entryId);
+      error = updateError;
+    } else {
+      // INSERT
+      const { error: insertError } = await supabase
+        .from("journal_entries")
+        .insert([entry]);
+      error = insertError;
     }
 
-    const { error } = await supabase.from("journal_entries").insert([
-      {
-        user_id: 1, // TEMP: replace with real user ID later
-        content,
-        mood: "neutral", // TEMP: replace with real mood later
-        ai_analysis: null,
-        ai_reflection: null,
-      },
-    ]);
-
     if (error) {
-      console.error("Supabase error:", error);
-      Alert.alert("Error", "Failed to save entry.");
+      console.error("Save failed", error);
     } else {
       navigation.goBack();
     }

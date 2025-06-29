@@ -1,48 +1,74 @@
 // screens/ViewEntryScreen.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRoute } from "@react-navigation/native";
+import {
+  useRoute,
+  useNavigation,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 
 export default function ViewEntryScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
   const { entryId } = route.params;
 
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
+  const source = route.params?.source || "journal";
 
-  useEffect(() => {
-    const fetchEntry = async () => {
-      const { data, error } = await supabase
-        .from("journal_entries")
-        .select("id, content, mood, ai_analysis, ai_reflection, created_at")
-        .eq("id", entryId)
-        .single();
+  useFocusEffect(
+    useCallback(() => {
+      const fetchEntry = async () => {
+        const table =
+          source === "community" ? "community_entries" : "journal_entries";
 
-      if (!error) {
-        setEntry(data);
-      } else {
-        console.error("Failed to load entry:", error);
-      }
-      setLoading(false);
-    };
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("id", entryId)
+          .single();
 
-    fetchEntry();
-  }, [entryId]);
+        if (!error) {
+          setEntry(data);
+        } else {
+          console.error("Failed to load entry:", error);
+        }
+
+        setLoading(false);
+      };
+
+      fetchEntry();
+    }, [entryId])
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
       <View style={styles.topBar}>
         <Text style={styles.username}>You</Text>
-        <Ionicons name="ellipsis-horizontal" size={24} color="#a48bff" />
+        <TouchableOpacity
+          onPress={() => {
+            if (source !== "community") {
+              navigation.navigate("NewEntry", {
+                editable: true,
+                title: entry.title,
+                content: entry.content,
+                entryId: entry.id,
+              });
+            }
+          }}
+        >
+          <Ionicons name="ellipsis-horizontal" size={24} color="#a48bff" />
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -51,10 +77,12 @@ export default function ViewEntryScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.contentContainer}>
-          <Text style={styles.title}>
-            {entry.mood ? `Mood: ${entry.mood}` : "Journal Entry"}
-          </Text>
+          {entry.title && <Text style={styles.title}>{entry.title}</Text>}
           <Text style={styles.content}>{entry.content}</Text>
+          {entry.mood && <Text style={styles.tag}>{entry.mood}</Text>}
+          {entry.demographics && (
+            <Text style={styles.tag}>{entry.demographics}</Text>
+          )}
 
           {entry.ai_reflection && (
             <View style={styles.section}>

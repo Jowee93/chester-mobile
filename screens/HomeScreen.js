@@ -1,28 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen({ navigation }) {
   const [entries, setEntries] = useState([]);
 
-  useEffect(() => {
-    const fetchEntries = async () => {
-      const { data, error } = await supabase
-        .from("journal_entries")
-        .select("id, content, created_at")
-        .order("created_at", { ascending: false });
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchEntries = async () => {
+        const { data, error } = await supabase
+          .from("journal_entries")
+          .select("id, title, content, created_at")
+          .order("created_at", { ascending: false });
 
-      if (!error && data) {
-        setEntries(data);
-      } else {
-        console.error("Failed to fetch entries:", error);
-      }
-    };
+        if (!error && data) {
+          setEntries(data);
+        } else {
+          console.error("Failed to fetch entries:", error);
+        }
+      };
 
-    fetchEntries();
-  }, []);
+      fetchEntries();
+    }, [])
+  );
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -64,7 +67,7 @@ export default function HomeScreen({ navigation }) {
           >
             <View style={styles.card}>
               <Text style={styles.entryTitle} numberOfLines={1}>
-                {entry.content.slice(0, 20)}...
+                {entry.title || entry.content.slice(0, 20) + "..."}
               </Text>
               <Text style={styles.entryContent} numberOfLines={2}>
                 {entry.content}

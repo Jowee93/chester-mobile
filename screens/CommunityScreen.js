@@ -64,6 +64,7 @@ export default function CommunityScreen() {
             onPress={() =>
               navigation.navigate("ViewEntry", {
                 entryId: item.id,
+                source: "community",
               })
             }
           >
@@ -72,7 +73,8 @@ export default function CommunityScreen() {
               <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
             </View>
 
-            <Text style={styles.title}>{item.mood}</Text>
+            <Text style={styles.title}>{item.title || item.mood}</Text>
+
             <Text style={styles.content}>{item.content}</Text>
 
             <View style={styles.footer}>
