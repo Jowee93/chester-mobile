@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { TouchableOpacity } from "react-native"; // Add this if not already
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const dummyEntries = [
   {
@@ -19,51 +20,53 @@ const dummyEntries = [
 
 export default function HomeScreen({ navigation }) {
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Journal</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>Journal</Text>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>1</Text>
-          <Text style={styles.statLabel}>Entry This Year</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>26</Text>
-          <Text style={styles.statLabel}>Words Written</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>1</Text>
-          <Text style={styles.statLabel}>Day Journaled</Text>
-        </View>
-      </View>
-
-      <Text style={styles.month}>June</Text>
-
-      {dummyEntries.map((entry) => (
-        <TouchableOpacity
-          key={entry.id}
-          onPress={() =>
-            navigation.navigate("NewEntry", {
-              editable: false,
-              title: entry.title,
-              content: entry.content,
-              images: entry.images,
-            })
-          }
-        >
-          <View style={styles.card}>
-            <View style={styles.imageGrid}>
-              {entry.images.map((img, index) => (
-                <Image key={index} source={img} style={styles.image} />
-              ))}
-            </View>
-            <Text style={styles.entryTitle}>{entry.title}</Text>
-            <Text style={styles.entryContent}>{entry.content}</Text>
-            <Text style={styles.entryDate}>{entry.date}</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>Entry This Year</Text>
           </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>26</Text>
+            <Text style={styles.statLabel}>Words Written</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>Day Journaled</Text>
+          </View>
+        </View>
+
+        <Text style={styles.month}>June</Text>
+
+        {dummyEntries.map((entry) => (
+          <TouchableOpacity
+            key={entry.id}
+            onPress={() =>
+              navigation.navigate("NewEntry", {
+                editable: false,
+                title: entry.title,
+                content: entry.content,
+                images: entry.images,
+              })
+            }
+          >
+            <View style={styles.card}>
+              <View style={styles.imageGrid}>
+                {entry.images.map((img, index) => (
+                  <Image key={index} source={img} style={styles.image} />
+                ))}
+              </View>
+              <Text style={styles.entryTitle}>{entry.title}</Text>
+              <Text style={styles.entryContent}>{entry.content}</Text>
+              <Text style={styles.entryDate}>{entry.date}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

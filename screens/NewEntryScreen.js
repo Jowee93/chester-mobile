@@ -24,6 +24,7 @@ export default function NewEntryScreen() {
   const [title, setTitle] = useState(route.params?.title || "");
   const [content, setContent] = useState(route.params?.content || "");
   const [images, setImages] = useState(route.params?.images || []);
+  const [showMenu, setShowMenu] = useState(false);
 
   return (
     <KeyboardAvoidingView
