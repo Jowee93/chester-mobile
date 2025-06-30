@@ -28,6 +28,7 @@ import {
 import { showMessage } from "react-native-flash-message";
 
 export default function ViewEntryScreen() {
+  const isEditable = route.params?.editable !== false;
   const route = useRoute();
   const navigation = useNavigation();
   const { entryId } = route.params;
@@ -68,72 +69,78 @@ export default function ViewEntryScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
         <View style={styles.topBar}>
           <Text style={styles.username}>You</Text>
-          <Menu>
-            <MenuTrigger
-              customStyles={{
-                TriggerTouchableComponent: TouchableOpacity,
-                triggerTouchable: {
-                  activeOpacity: 0.6,
-                },
-              }}
-            >
-              <Ionicons name="ellipsis-horizontal" size={24} color="#a48bff" />
-            </MenuTrigger>
-            <MenuOptions
-              customStyles={{
-                optionsContainer: { backgroundColor: "#1a162d" },
-              }}
-            >
-              <MenuOption
-                onSelect={() =>
-                  navigation.navigate("NewEntry", {
-                    editable: true,
-                    title: entry.title,
-                    content: entry.content,
-                    entryId: entry.id,
-                  })
-                }
-              >
-                <Text style={{ color: "white", padding: 10 }}>Edit</Text>
-              </MenuOption>
-              <MenuOption
-                onSelect={() => {
-                  Alert.alert(
-                    "Delete Entry",
-                    "Are you sure you want to delete this journal entry?",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: async () => {
-                          console.log("Confirmed delete");
-                          const { error } = await supabase
-                            .from("journal_entries")
-                            .update({ deleted: true })
-                            .eq("id", entry.id);
-
-                          if (!error) {
-                            showMessage({
-                              message: "Entry deleted",
-                              type: "success",
-                            });
-                            setTimeout(() => {
-                              navigation.goBack();
-                            }, 500);
-                          } else {
-                            console.error("Delete failed:", error);
-                          }
-                        },
-                      },
-                    ]
-                  );
+          {isEditable && (
+            <Menu>
+              <MenuTrigger
+                customStyles={{
+                  TriggerTouchableComponent: TouchableOpacity,
+                  triggerTouchable: {
+                    activeOpacity: 0.6,
+                  },
                 }}
               >
-                <Text style={{ color: "red", padding: 10 }}>Delete</Text>
-              </MenuOption>
-            </MenuOptions>
-          </Menu>
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={24}
+                  color="#a48bff"
+                />
+              </MenuTrigger>
+              <MenuOptions
+                customStyles={{
+                  optionsContainer: { backgroundColor: "#1a162d" },
+                }}
+              >
+                <MenuOption
+                  onSelect={() =>
+                    navigation.navigate("NewEntry", {
+                      editable: true,
+                      title: entry.title,
+                      content: entry.content,
+                      entryId: entry.id,
+                    })
+                  }
+                >
+                  <Text style={{ color: "white", padding: 10 }}>Edit</Text>
+                </MenuOption>
+                <MenuOption
+                  onSelect={() => {
+                    Alert.alert(
+                      "Delete Entry",
+                      "Are you sure you want to delete this journal entry?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: async () => {
+                            console.log("Confirmed delete");
+                            const { error } = await supabase
+                              .from("journal_entries")
+                              .update({ deleted: true })
+                              .eq("id", entry.id);
+
+                            if (!error) {
+                              showMessage({
+                                message: "Entry deleted",
+                                type: "success",
+                              });
+                              setTimeout(() => {
+                                navigation.goBack();
+                              }, 500);
+                            } else {
+                              console.error("Delete failed:", error);
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={{ color: "red", padding: 10 }}>Delete</Text>
+                </MenuOption>
+              </MenuOptions>
+            </Menu>
+          )}
         </View>
 
         {loading ? (

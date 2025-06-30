@@ -65,6 +65,7 @@ export default function CommunityScreen() {
               navigation.navigate("ViewEntry", {
                 entryId: item.id,
                 source: "community",
+                editable: false, // 👈 force read-only mode for community posts
               })
             }
           >

@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import { supabase } from "../lib/supabase";
 
 export default function SignupScreen({ navigation }) {
@@ -18,10 +25,15 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Sign Up for Chester</Text>
+      <Text style={styles.header}>Join Chester 🪷</Text>
+      <Text style={styles.subtext}>
+        Let’s begin your self-reflection journey
+      </Text>
+
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#aaa"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -30,21 +42,53 @@ export default function SignupScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password (min 6 chars)"
+        placeholderTextColor="#aaa"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Sign Up" onPress={handleSignup} />
-      <Text style={styles.switch} onPress={() => navigation.navigate("Login")}>
-        Already have an account? Log in
+
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
+        <Text style={styles.buttonText}>Create Account</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.switchText}>
+        Already have an account?{" "}
+        <Text
+          style={styles.switchLink}
+          onPress={() => navigation.navigate("Login")}
+        >
+          Log in
+        </Text>
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  input: { borderBottomWidth: 1, marginBottom: 20, padding: 10 },
-  header: { fontSize: 24, marginBottom: 40, textAlign: "center" },
-  switch: { textAlign: "center", marginTop: 20, color: "blue" },
+  container: {
+    flex: 1,
+    backgroundColor: "#0e0b1f",
+    justifyContent: "center",
+    padding: 24,
+  },
+  header: { fontSize: 28, color: "white", fontWeight: "bold", marginBottom: 8 },
+  subtext: { fontSize: 14, color: "#ccc", marginBottom: 24 },
+  input: {
+    backgroundColor: "#1f1b36",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    color: "white",
+  },
+  button: {
+    backgroundColor: "#a48bff",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  switchText: { color: "#ccc", marginTop: 24, textAlign: "center" },
+  switchLink: { color: "#a48bff", fontWeight: "500" },
 });
