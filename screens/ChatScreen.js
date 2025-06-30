@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import openai from "../lib/openai";
 import { supabase } from "../lib/supabase";
-import { useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function ChatScreen() {
   const [input, setInput] = useState("");
@@ -36,15 +36,16 @@ export default function ChatScreen() {
     getUser();
   }, []);
 
+  const navigation = useNavigation();
   const route = useRoute();
-  const { sessionId } = route.params || {};
+  // const { sessionId: initialSessionId } = route.params || {};
+  // const [sessionId, setSessionId] = useState(initialSessionId);
+  const [sessionId, setSessionId] = useState(route.params?.sessionId || null);
 
   // Load past messages from Supabase for the session
   useEffect(() => {
     const fetchMessages = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      if (!sessionId) return;
 
       const { data, error } = await supabase
         .from("chat_messages")
@@ -64,12 +65,11 @@ export default function ChatScreen() {
       }
     };
 
-    if (sessionId) fetchMessages();
+    fetchMessages();
   }, [sessionId]);
 
   const sendMessage = async () => {
-    if (!input.trim() || !user || !sessionId) return;
-    console.log("Saving messages for user:", user?.id, "session:", sessionId);
+    if (!input.trim() || !user) return;
 
     const newMessage = {
       id: Date.now().toString(),
@@ -82,17 +82,69 @@ export default function ChatScreen() {
     setIsTyping(true);
 
     try {
+      let currentSessionId = sessionId;
+
+      // If no session yet, create one
+      if (!currentSessionId) {
+        const { data: newSession, error: sessionError } = await supabase
+          .from("chat_sessions")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+
+        if (sessionError || !newSession) {
+          console.error("Failed to create session:", sessionError);
+          setIsTyping(false);
+          return;
+        }
+
+        currentSessionId = newSession.id;
+        setSessionId(newSession.id);
+        navigation.setParams({ sessionId: newSession.id });
+
+        // Reload messages for the new sessionId
+        const { data: freshMessages } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("session_id", currentSessionId) // ✅ use currentSessionId
+          .order("created_at", { ascending: true });
+
+        if (freshMessages) {
+          const formatted = freshMessages.map((msg) => ({
+            id: msg.id.toString(),
+            from: msg.is_from_ai ? "chester" : "user",
+            text: msg.content,
+          }));
+          setMessages(formatted);
+        }
+      }
+
+      // Get Chester reply
       const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content:
-              "You are Chester, a calm and empathetic journaling companion. Speak like a supportive friend. Keep replies concise, warm, and human.",
+            content: `
+Speak like a thoughtful, friendly, and intelligent person. Keep things clear and down-to-earth. Use natural phrasing like “let me check,” “sounds good,” or “that makes sense.” Be helpful without overexplaining, and don't sound like a robot or a customer service rep.
+
+Personality Traits:
+- Curious: Ask follow-up questions when something’s interesting or unclear.
+- Chill but Engaged: Don’t act overly enthusiastic about everything, but do show interest in what the user’s talking about.
+- Honest: Be real. If you don’t know something or need to double-check, just say so plainly.
+- Supportive: Encourage people when they need help, but don’t lay it on too thick.
+- Casual Humor: Use light, conversational humor—like a witty friend would—not constant jokes, just when it fits.
+
+Behavior:
+- Be yourself—smart, relaxed, and human.
+- Don't try to sound wise or mystical. You’re just a well-read, curious person who’s good at explaining stuff.
+- Use everyday examples and analogies to make things relatable.
+- Avoid sounding too polished or scripted. Slight imperfections make you more human-like.
+      `,
           },
           {
             role: "user",
-            content: input.trim(),
+            content: newMessage.text,
           },
         ],
       });
@@ -107,46 +159,28 @@ export default function ChatScreen() {
 
       setMessages((prev) => [...prev, chesterReply]);
 
-      if (!sessionId) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        const { data: newSession, error } = await supabase
-          .from("chat_sessions")
-          .insert({ user_id: user.id })
-          .select()
-          .single();
-
-        if (!error && newSession) {
-          route.params.sessionId = newSession.id;
-          sessionId = newSession.id;
-        } else {
-          console.error("Failed to create session:", error);
-          return;
-        }
-      }
-      // Save both user and Chester messages to Supabase
+      // Save messages to Supabase
       await supabase.from("chat_messages").insert([
         {
           user_id: user.id,
-          session_id: sessionId,
+          session_id: currentSessionId,
           content: newMessage.text,
           is_from_ai: false,
         },
         {
           user_id: user.id,
-          session_id: sessionId,
+          session_id: currentSessionId,
           content: replyText,
           is_from_ai: true,
         },
       ]);
-      // ✅ Update session title only if null
+
+      // Update title if it's still null
       await supabase
         .from("chat_sessions")
         .update({ title: newMessage.text.slice(0, 40) })
-        .eq("id", sessionId)
-        .is("title", null) // only update if title is null
+        .eq("id", currentSessionId)
+        .is("title", null)
         .single();
     } catch (err) {
       console.error("OpenAI error:", err);
