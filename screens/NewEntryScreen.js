@@ -1,4 +1,3 @@
-// screens/NewEntryScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -21,23 +20,29 @@ import { supabase } from "../lib/supabase";
 export default function NewEntryScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const isEditable = route.params?.editable !== false;
+  const user = supabase.auth.getUser().data.user;
 
   const [title, setTitle] = useState(route.params?.title || "");
   const [content, setContent] = useState(route.params?.content || "");
   const [images, setImages] = useState(route.params?.images || []);
 
+  // Safe fallback for route.params
+  const isEditable =
+    route.params?.editable !== false || route.params === undefined;
+
   const handleSave = async () => {
     if (!content.trim()) return;
 
     const entry = {
-      user_id: supabase.auth.getUser().data.user.id,
+      user_id: user.id,
       title,
       content,
       mood: "neutral",
       created_at: new Date().toISOString(),
       deleted: false,
     };
+
+    console.log("Saving entry:", { entry, routeParams: route.params });
 
     let error;
 
@@ -58,6 +63,7 @@ export default function NewEntryScreen() {
 
     if (error) {
       console.error("Save failed", error);
+      Alert.alert("Failed to save entry", error.message);
     } else {
       navigation.goBack();
     }

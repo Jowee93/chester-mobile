@@ -23,7 +23,7 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
 
-  const userId = 1; // Replace with real auth later
+  const user = supabase.auth.getUser().data.user;
 
   // Load past messages from Supabase
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function ChatScreen() {
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: true });
 
       if (!error && data) {

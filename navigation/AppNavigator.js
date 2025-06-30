@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BottomTabs from "./BottomTabs";
 import NewEntryScreen from "../screens/NewEntryScreen";
@@ -36,21 +35,19 @@ export default function AppNavigator() {
   if (loading) return null; // Optional: show loading screen
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {session ? (
-          <>
-            <Stack.Screen name="MainTabs" component={BottomTabs} />
-            <Stack.Screen name="NewEntry" component={NewEntryScreen} />
-            <Stack.Screen name="ViewEntry" component={ViewEntryScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {session ? (
+        <>
+          <Stack.Screen name="MainTabs" component={BottomTabs} />
+          <Stack.Screen name="NewEntry" component={NewEntryScreen} />
+          <Stack.Screen name="ViewEntry" component={ViewEntryScreen} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
+        </>
+      )}
+    </Stack.Navigator>
   );
 }

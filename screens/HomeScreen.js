@@ -85,8 +85,9 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("ViewEntry", {
-                entryId: item.id,
-                source: "journal",
+                entryId: entry.id,
+                editable: true, // Allow edit/delete
+                source: "journal", // Identify source table
               })
             }
           >
