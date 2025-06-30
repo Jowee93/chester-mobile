@@ -5,6 +5,7 @@ import NewEntryScreen from "../screens/NewEntryScreen";
 import ViewEntryScreen from "../screens/ViewEntryScreen";
 import LoginScreen from "../screens/LoginScreen";
 import SignupScreen from "../screens/SignupScreen";
+import ChatSessionsScreen from "../screens/ChatSessionsScreen";
 import { supabase } from "../lib/supabase";
 
 const Stack = createNativeStackNavigator();
@@ -41,6 +42,8 @@ export default function AppNavigator() {
           <Stack.Screen name="MainTabs" component={BottomTabs} />
           <Stack.Screen name="NewEntry" component={NewEntryScreen} />
           <Stack.Screen name="ViewEntry" component={ViewEntryScreen} />
+          <Stack.Screen name="ChatSessions" component={ChatSessionsScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
         </>
       ) : (
         <>

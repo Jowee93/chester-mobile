@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import openai from "../lib/openai";
 import { supabase } from "../lib/supabase";
+import { useRoute } from "@react-navigation/native";
 
 export default function ChatScreen() {
   const [input, setInput] = useState("");
@@ -24,24 +25,20 @@ export default function ChatScreen() {
   const flatListRef = useRef(null);
   const [user, setUser] = useState(null);
 
-  // Load past messages from Supabase
+  const route = useRoute();
+  const { sessionId } = route.params || {};
+
+  // Load past messages from Supabase for the session
   useEffect(() => {
     const fetchMessages = async () => {
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
-      const currentUser = userData?.user;
-
-      if (!currentUser) {
-        console.warn("No user found");
-        return;
-      }
-
-      setUser(currentUser); // ✅ Set user here
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("user_id", currentUser.id)
+        .eq("session_id", sessionId)
         .order("created_at", { ascending: true });
 
       if (!error && data) {
@@ -56,8 +53,8 @@ export default function ChatScreen() {
       }
     };
 
-    fetchMessages();
-  }, []);
+    if (sessionId) fetchMessages();
+  }, [sessionId]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -101,16 +98,25 @@ export default function ChatScreen() {
       // Save both user and Chester messages to Supabase
       await supabase.from("chat_messages").insert([
         {
-          user_id: user?.id,
+          user_id: user.id,
+          session_id: sessionId,
           content: newMessage.text,
           is_from_ai: false,
         },
         {
-          user_id: user?.id,
+          user_id: user.id,
+          session_id: sessionId,
           content: replyText,
           is_from_ai: true,
         },
       ]);
+      // ✅ Update session title only if null
+      await supabase
+        .from("chat_sessions")
+        .update({ title: newMessage.text.slice(0, 40) })
+        .eq("id", sessionId)
+        .is("title", null) // only update if title is null
+        .single();
     } catch (err) {
       console.error("OpenAI error:", err);
       setMessages((prev) => [
