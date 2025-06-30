@@ -9,6 +9,7 @@ import ChatScreen from "../screens/ChatScreen";
 import CommunityScreen from "../screens/CommunityScreen";
 import InsightsScreen from "../screens/InsightsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import ChatSessionsScreen from "../screens/ChatSessionsScreen"; // ✅ Import ChatSessionsScreen
 
 const Tab = createBottomTabNavigator();
 

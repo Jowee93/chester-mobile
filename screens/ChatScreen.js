@@ -25,6 +25,17 @@ export default function ChatScreen() {
   const flatListRef = useRef(null);
   const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+  }, []);
+
   const route = useRoute();
   const { sessionId } = route.params || {};
 
@@ -57,7 +68,8 @@ export default function ChatScreen() {
   }, [sessionId]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !user || !sessionId) return;
+    console.log("Saving messages for user:", user?.id, "session:", sessionId);
 
     const newMessage = {
       id: Date.now().toString(),
@@ -95,6 +107,25 @@ export default function ChatScreen() {
 
       setMessages((prev) => [...prev, chesterReply]);
 
+      if (!sessionId) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        const { data: newSession, error } = await supabase
+          .from("chat_sessions")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+
+        if (!error && newSession) {
+          route.params.sessionId = newSession.id;
+          sessionId = newSession.id;
+        } else {
+          console.error("Failed to create session:", error);
+          return;
+        }
+      }
       // Save both user and Chester messages to Supabase
       await supabase.from("chat_messages").insert([
         {
