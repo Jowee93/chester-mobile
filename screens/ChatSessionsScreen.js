@@ -5,11 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Alert,
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context"; // Add this import
 import { Ionicons } from "@expo/vector-icons";
+import { Swipeable } from "react-native-gesture-handler";
 
 export default function ChatSessionsScreen() {
   const [sessions, setSessions] = useState([]);
@@ -30,7 +32,7 @@ export default function ChatSessionsScreen() {
           id,
           created_at,
           title,
-          chat_messages!chat_sessions_id_fkey (
+          chat_messages!session_id (
             content,
             created_at,
             is_from_ai
@@ -77,9 +79,36 @@ export default function ChatSessionsScreen() {
     navigation.push("Chat", { sessionId });
   };
 
-  const handleDeleteSession = async (sessionId) => {
-    await supabase.from("chat_sessions").delete().eq("id", sessionId);
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  const handleDeleteSession = (sessionId) => {
+    Alert.alert(
+      "Delete Chat",
+      "Are you sure you want to delete this chat?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase
+              .from("chat_sessions")
+              .delete()
+              .eq("id", sessionId);
+
+            if (error) {
+              console.error("Delete error:", error);
+            } else {
+              setSessions((prev) =>
+                prev.filter((session) => session.id !== sessionId)
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -90,20 +119,34 @@ export default function ChatSessionsScreen() {
         <FlatList
           data={sessions}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.sessionItem}
-              onPress={() => handleOpenSession(item.id)}
-            >
-              <Text style={styles.sessionTitle}>{item.title}</Text>
-              <Text style={styles.sessionPreview} numberOfLines={1}>
-                {item.lastMessage}
-              </Text>
-              <Text style={styles.sessionDate}>
-                {new Date(item.createdAt).toLocaleDateString()}
-              </Text>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const renderRightActions = () => (
+              <TouchableOpacity
+                style={styles.swipeDelete}
+                onPress={() => handleDeleteSession(item.id)}
+              >
+                <Ionicons name="trash" size={24} color="#fff" />
+                <Text style={styles.swipeText}>Delete</Text>
+              </TouchableOpacity>
+            );
+
+            return (
+              <Swipeable renderRightActions={renderRightActions}>
+                <TouchableOpacity
+                  style={styles.sessionItem}
+                  onPress={() => handleOpenSession(item.id)}
+                >
+                  <Text style={styles.sessionTitle}>{item.title}</Text>
+                  <Text style={styles.sessionPreview} numberOfLines={1}>
+                    {item.lastMessage}
+                  </Text>
+                  <Text style={styles.sessionDate}>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+              </Swipeable>
+            );
+          }}
           contentContainerStyle={{ paddingBottom: 100 }} // so button doesn't overlap
         />
         <TouchableOpacity
@@ -191,5 +234,19 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+  },
+  swipeDelete: {
+    backgroundColor: "#ff4d4d",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: "100%",
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  swipeText: {
+    color: "#fff",
+    fontSize: 12,
+    marginTop: 4,
   },
 });
