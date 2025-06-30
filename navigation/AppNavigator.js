@@ -6,6 +6,7 @@ import ViewEntryScreen from "../screens/ViewEntryScreen";
 import LoginScreen from "../screens/LoginScreen";
 import SignupScreen from "../screens/SignupScreen";
 import ChatSessionsScreen from "../screens/ChatSessionsScreen";
+import ChatScreen from "../screens/ChatScreen"; // ✅ ADD THIS
 import { supabase } from "../lib/supabase";
 
 const Stack = createNativeStackNavigator();
@@ -21,7 +22,7 @@ export default function AppNavigator() {
       setLoading(false);
     });
 
-    // Listen for session changes (login/logout)
+    // Listen for session changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -33,7 +34,7 @@ export default function AppNavigator() {
     };
   }, []);
 
-  if (loading) return null; // Optional: show loading screen
+  if (loading) return null;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
