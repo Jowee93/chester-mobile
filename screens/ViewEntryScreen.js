@@ -28,14 +28,14 @@ import {
 import { showMessage } from "react-native-flash-message";
 
 export default function ViewEntryScreen() {
-  const isEditable = route.params?.editable !== false;
   const route = useRoute();
   const navigation = useNavigation();
   const { entryId } = route.params;
+  const source = route.params?.source || "journal";
+  const isEditable = route.params?.editable !== false;
 
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
-  const source = route.params?.source || "journal";
 
   const { showActionSheetWithOptions } = useActionSheet();
 
@@ -69,7 +69,7 @@ export default function ViewEntryScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
         <View style={styles.topBar}>
           <Text style={styles.username}>You</Text>
-          {isEditable && (
+          {isEditable && entry && (
             <Menu>
               <MenuTrigger
                 customStyles={{

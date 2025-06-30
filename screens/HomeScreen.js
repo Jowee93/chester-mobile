@@ -23,7 +23,15 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchEntries = async () => {
-        const user = supabase.auth.getUser().data.user;
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          console.error("User fetch error:", userError);
+          return;
+        }
 
         const { data, error } = await supabase
           .from("journal_entries")
@@ -85,7 +93,7 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("ViewEntry", {
-                entryId: entry.id,
+                entryId: item.id,
                 editable: true, // Allow edit/delete
                 source: "journal", // Identify source table
               })
