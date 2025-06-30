@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import { supabase } from "../lib/supabase";
 export default function NewEntryScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const user = supabase.auth.getUser().data.user;
+  const [user, setUser] = useState(null);
 
   const [title, setTitle] = useState(route.params?.title || "");
   const [content, setContent] = useState(route.params?.content || "");
@@ -32,6 +32,11 @@ export default function NewEntryScreen() {
 
   const handleSave = async () => {
     if (!content.trim()) return;
+
+    if (!user) {
+      Alert.alert("User not found", "Please log in again.");
+      return;
+    }
 
     const entry = {
       user_id: user.id,
@@ -68,6 +73,18 @@ export default function NewEntryScreen() {
       navigation.goBack();
     }
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Failed to get user", error);
+      } else {
+        setUser(data?.user);
+      }
+    };
+    fetchUser();
+  }, []);
 
   return (
     <KeyboardAvoidingView

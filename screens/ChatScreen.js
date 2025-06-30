@@ -22,16 +22,26 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
-
-  const user = supabase.auth.getUser().data.user;
+  const [user, setUser] = useState(null);
 
   // Load past messages from Supabase
   useEffect(() => {
     const fetchMessages = async () => {
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+      const currentUser = userData?.user;
+
+      if (!currentUser) {
+        console.warn("No user found");
+        return;
+      }
+
+      setUser(currentUser); // ✅ Set user here
+
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUser.id)
         .order("created_at", { ascending: true });
 
       if (!error && data) {
@@ -91,12 +101,12 @@ export default function ChatScreen() {
       // Save both user and Chester messages to Supabase
       await supabase.from("chat_messages").insert([
         {
-          user_id: userId,
+          user_id: user?.id,
           content: newMessage.text,
           is_from_ai: false,
         },
         {
-          user_id: userId,
+          user_id: user?.id,
           content: replyText,
           is_from_ai: true,
         },
