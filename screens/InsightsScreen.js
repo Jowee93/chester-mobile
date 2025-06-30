@@ -9,6 +9,69 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Alert } from "react-native";
+import { supabase } from "../lib/supabase";
+
+const [user, setUser] = useState(null);
+
+const [stats, setStats] = useState({
+  entries: 0,
+  daysReflected: 0,
+  longestStreak: 0,
+});
+
+useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    const currentUser = data?.session?.user || null;
+    setUser(currentUser);
+    if (currentUser) fetchStats(currentUser.id);
+  });
+}, []);
+
+const handleLogout = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) Alert.alert("Logout failed", error.message);
+};
+
+const fetchStats = async (userId) => {
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("deleted", false);
+
+  if (error || !data) return;
+
+  const entries = data.length;
+
+  const uniqueDays = new Set(
+    data.map((entry) => new Date(entry.created_at).toDateString())
+  );
+
+  // Calculate longest streak (optional basic logic)
+  const sortedDates = [...uniqueDays]
+    .map((d) => new Date(d))
+    .sort((a, b) => a - b);
+  let longestStreak = 0;
+  let currentStreak = 1;
+
+  for (let i = 1; i < sortedDates.length; i++) {
+    const diff = (sortedDates[i] - sortedDates[i - 1]) / (1000 * 60 * 60 * 24);
+    if (diff === 1) {
+      currentStreak += 1;
+      longestStreak = Math.max(longestStreak, currentStreak);
+    } else {
+      currentStreak = 1;
+    }
+  }
+
+  setStats({
+    entries,
+    daysReflected: uniqueDays.size,
+    longestStreak,
+  });
+};
 
 export default function InsightsScreen() {
   return (
@@ -23,21 +86,21 @@ export default function InsightsScreen() {
             source={require("../assets/chester-avatar.png")}
             style={styles.avatar}
           />
-          <Text style={styles.name}>Anonymous User</Text>
+          <Text style={styles.name}>{user?.email || "Anonymous User"}</Text>
         </View>
 
         {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>42</Text>
+            <Text style={styles.statValue}>{stats.entries}</Text>
             <Text style={styles.statLabel}>Entries</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>18</Text>
+            <Text style={styles.statValue}>{stats.daysReflected}</Text>
             <Text style={styles.statLabel}>Days Reflected</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>7</Text>
+            <Text style={styles.statValue}>{stats.longestStreak}</Text>
             <Text style={styles.statLabel}>Longest Streak</Text>
           </View>
         </View>
@@ -73,7 +136,7 @@ export default function InsightsScreen() {
           <TouchableOpacity>
             <Text style={styles.settingItem}>About Chester</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
             <Text style={styles.settingItem}>Log Out</Text>
           </TouchableOpacity>
         </View>

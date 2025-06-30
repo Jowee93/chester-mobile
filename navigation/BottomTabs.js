@@ -8,6 +8,7 @@ import HomeScreen from "../screens/HomeScreen";
 import ChatScreen from "../screens/ChatScreen";
 import CommunityScreen from "../screens/CommunityScreen";
 import InsightsScreen from "../screens/InsightsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 

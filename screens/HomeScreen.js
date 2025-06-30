@@ -23,10 +23,13 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchEntries = async () => {
+        const user = supabase.auth.getUser().data.user;
+
         const { data, error } = await supabase
           .from("journal_entries")
           .select("id, title, content, created_at")
           .eq("deleted", false)
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
         if (!error && data) {

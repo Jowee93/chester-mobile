@@ -31,10 +31,12 @@ export default function NewEntryScreen() {
     if (!content.trim()) return;
 
     const entry = {
-      user_id: 1, // TEMP
+      user_id: supabase.auth.getUser().data.user.id,
       title,
       content,
       mood: "neutral",
+      created_at: new Date().toISOString(),
+      deleted: false,
     };
 
     let error;
