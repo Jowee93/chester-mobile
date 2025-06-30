@@ -42,7 +42,7 @@ export default function BottomTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Chat" component={ChatSessionsScreen} />
 
       <Tab.Screen
         name="FakeButton"
