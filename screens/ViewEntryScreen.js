@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -101,11 +102,19 @@ export default function ViewEntryScreen() {
   };
 
   return (
-    <MenuProvider style={{ flex: 1 }}>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
+      <MenuProvider style={{ flex: 1 }}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={colors.background}
+        />
+
         {/* Header */}
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
 
@@ -123,11 +132,13 @@ export default function ViewEntryScreen() {
                   },
                 }}
               >
-                <Ionicons
-                  name="ellipsis-horizontal"
-                  size={24}
-                  color={colors.textSecondary}
-                />
+                <View style={styles.menuButton}>
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </View>
               </MenuTrigger>
               <MenuOptions
                 customStyles={{
@@ -135,6 +146,11 @@ export default function ViewEntryScreen() {
                     backgroundColor: colors.cardBackground,
                     borderRadius: 12,
                     paddingVertical: spacing.sm,
+                    shadowColor: colors.textPrimary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 8,
                   },
                 }}
               >
@@ -158,6 +174,9 @@ export default function ViewEntryScreen() {
               </MenuOptions>
             </Menu>
           )}
+
+          {/* Spacer for non-editable entries */}
+          {!isEditable && <View style={styles.menuButton} />}
         </View>
 
         {/* Content */}
@@ -166,7 +185,10 @@ export default function ViewEntryScreen() {
             <ActivityIndicator color={colors.primary} size="large" />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.contentContainer}>
+          <ScrollView
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator={false}
+          >
             {entry.title && <Text style={styles.title}>{entry.title}</Text>}
             <Text style={styles.content}>{entry.content}</Text>
 
@@ -197,12 +219,12 @@ export default function ViewEntryScreen() {
             )}
           </ScrollView>
         )}
-      </SafeAreaView>
-    </MenuProvider>
+      </MenuProvider>
+    </SafeAreaView>
   );
 }
 
-// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
+// 🔧 FIXED STYLES WITH PROPER SAFE AREA HANDLING
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -218,12 +240,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.separator,
+    // Remove any paddingTop you might have here
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   username: {
     ...typography.headline,
     color: colors.primary,
     fontWeight: "600",
+    flex: 1,
+    textAlign: "center",
+  },
+
+  menuButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   menuOption: {
@@ -240,7 +279,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    paddingBottom: 100, // Space for tab bar
+    paddingBottom: 120, // 🚀 FIXED: More space for tab bar and safe area
   },
 
   title: {

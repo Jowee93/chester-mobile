@@ -14,6 +14,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import {
@@ -104,106 +105,117 @@ export default function NewEntryScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
-          {/* Top Bar */}
-          <View style={styles.topBar}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons
-                name="chevron-back-outline"
-                size={24}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.dateText}>{getCurrentDate()}</Text>
-            <View style={styles.topRight}>
-              {isEditable ? (
-                <TouchableOpacity onPress={handleSave}>
-                  <Text style={styles.saveText}>Save</Text>
-                </TouchableOpacity>
-              ) : (
-                <View />
-              )}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={{ flex: 1 }}>
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons
+                  name="chevron-back-outline"
+                  size={24}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+              <Text style={styles.dateText}>{getCurrentDate()}</Text>
+              <View style={styles.topRight}>
+                {isEditable ? (
+                  <TouchableOpacity onPress={handleSave}>
+                    <Text style={styles.saveText}>Save</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View />
+                )}
+              </View>
             </View>
+
+            {/* Main Content */}
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Title Input */}
+              <TextInput
+                style={styles.titleInput}
+                placeholder="Entry title (optional)"
+                placeholderTextColor={colors.textTertiary}
+                value={title}
+                onChangeText={setTitle}
+                editable={isEditable}
+                maxLength={100}
+              />
+
+              {/* Content Input */}
+              <TextInput
+                style={styles.contentInput}
+                placeholder="What's on your mind?"
+                placeholderTextColor={colors.textTertiary}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                textAlignVertical="top"
+                editable={isEditable}
+              />
+
+              {/* Images (if any) */}
+              {images.length > 0 && (
+                <View style={styles.imagesContainer}>
+                  {images.map((imageUri, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: imageUri }}
+                      style={styles.image}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Tools Bar */}
+              {isEditable && (
+                <View style={styles.toolsBar}>
+                  <TouchableOpacity style={styles.toolButton}>
+                    <Ionicons
+                      name="camera"
+                      size={24}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.toolButton}>
+                    <Ionicons
+                      name="mic"
+                      size={24}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.toolButton}>
+                    <Ionicons
+                      name="happy"
+                      size={24}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
           </View>
-
-          {/* Main Content */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Title Input */}
-            <TextInput
-              style={styles.titleInput}
-              placeholder="Entry title (optional)"
-              placeholderTextColor={colors.textTertiary}
-              value={title}
-              onChangeText={setTitle}
-              editable={isEditable}
-              maxLength={100}
-            />
-
-            {/* Content Input */}
-            <TextInput
-              style={styles.contentInput}
-              placeholder="What's on your mind?"
-              placeholderTextColor={colors.textTertiary}
-              value={content}
-              onChangeText={setContent}
-              multiline
-              textAlignVertical="top"
-              editable={isEditable}
-            />
-
-            {/* Images (if any) */}
-            {images.length > 0 && (
-              <View style={styles.imagesContainer}>
-                {images.map((imageUri, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: imageUri }}
-                    style={styles.image}
-                  />
-                ))}
-              </View>
-            )}
-
-            {/* Tools Bar */}
-            {isEditable && (
-              <View style={styles.toolsBar}>
-                <TouchableOpacity style={styles.toolButton}>
-                  <Ionicons
-                    name="camera"
-                    size={24}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolButton}>
-                  <Ionicons name="mic" size={24} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolButton}>
-                  <Ionicons
-                    name="happy"
-                    size={24}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 // 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -215,7 +227,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingTop: spacing.xl,
     backgroundColor: colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.separator,
