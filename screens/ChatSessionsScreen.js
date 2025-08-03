@@ -9,18 +9,82 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context"; // Add this import
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
+import {
+  colors,
+  typography,
+  spacing,
+  cardStyles,
+  shadows,
+} from "../styles/designSystem";
 
 export default function ChatSessionsScreen() {
   const [sessions, setSessions] = useState([]);
   const navigation = useNavigation();
   const [creating, setCreating] = useState(false);
 
+  // 🚀 SOLUTION 2: Cleanup function for empty sessions
+  const cleanupEmptySessions = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Find sessions with no messages
+      const { data: emptySessions, error } = await supabase
+        .from("chat_sessions")
+        .select(
+          `
+          id,
+          chat_messages!session_id (id)
+        `
+        )
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error fetching sessions for cleanup:", error);
+        return;
+      }
+
+      if (emptySessions) {
+        const emptySessionIds = emptySessions
+          .filter(
+            (session) =>
+              !session.chat_messages || session.chat_messages.length === 0
+          )
+          .map((session) => session.id);
+
+        if (emptySessionIds.length > 0) {
+          console.log(
+            `🧹 Cleaning up ${emptySessionIds.length} empty chat sessions`
+          );
+
+          const { error: deleteError } = await supabase
+            .from("chat_sessions")
+            .delete()
+            .in("id", emptySessionIds);
+
+          if (deleteError) {
+            console.error("Error deleting empty sessions:", deleteError);
+          } else {
+            console.log("✅ Empty sessions cleaned up successfully");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in cleanup function:", error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       const fetchSessions = async () => {
+        // 🚀 Clean up empty sessions first
+        await cleanupEmptySessions();
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -32,6 +96,7 @@ export default function ChatSessionsScreen() {
           id,
           created_at,
           title,
+          last_updated,
           chat_messages!session_id (
             content,
             created_at,
@@ -40,7 +105,7 @@ export default function ChatSessionsScreen() {
         `
           )
           .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+          .order("last_updated", { ascending: false }); // ✅ Order by last_updated
 
         if (data && !error) {
           const sessionsWithPreview = data.map((session) => {
@@ -55,13 +120,19 @@ export default function ChatSessionsScreen() {
 
             return {
               id: session.id,
-              title: session.title || "Untitled",
+              title: session.title || "New Chat",
               lastMessage: lastMsg,
               createdAt: session.created_at,
+              lastUpdated: session.last_updated || session.created_at, // ✅ Use last_updated
+              messageCount: messages.length, // ✅ Track message count
             };
           });
 
-          setSessions(sessionsWithPreview);
+          // ✅ Filter out sessions that still have no messages (extra safety)
+          const validSessions = sessionsWithPreview.filter(
+            (session) => session.messageCount > 0
+          );
+          setSessions(validSessions);
         } else {
           console.error("Error loading chat sessions:", error);
         }
@@ -72,7 +143,7 @@ export default function ChatSessionsScreen() {
   );
 
   const handleNewSession = () => {
-    navigation.push("Chat", { sessionId: null }); // No DB entry yet
+    navigation.push("Chat", { sessionId: null }); // No DB entry yet - will be created on first message
   };
 
   const handleOpenSession = (sessionId) => {
@@ -82,7 +153,7 @@ export default function ChatSessionsScreen() {
   const handleDeleteSession = (sessionId) => {
     Alert.alert(
       "Delete Chat",
-      "Are you sure you want to delete this chat?",
+      "Are you sure you want to delete this chat? This action cannot be undone.",
       [
         {
           text: "Cancel",
@@ -92,22 +163,97 @@ export default function ChatSessionsScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            const { error } = await supabase
-              .from("chat_sessions")
-              .delete()
-              .eq("id", sessionId);
+            try {
+              // Delete all messages first
+              await supabase
+                .from("chat_messages")
+                .delete()
+                .eq("session_id", sessionId);
 
-            if (error) {
+              // Then delete the session
+              const { error } = await supabase
+                .from("chat_sessions")
+                .delete()
+                .eq("id", sessionId);
+
+              if (error) {
+                console.error("Delete error:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete chat. Please try again."
+                );
+              } else {
+                // Update local state
+                setSessions((prev) =>
+                  prev.filter((session) => session.id !== sessionId)
+                );
+              }
+            } catch (error) {
               console.error("Delete error:", error);
-            } else {
-              setSessions((prev) =>
-                prev.filter((session) => session.id !== sessionId)
-              );
+              Alert.alert("Error", "Failed to delete chat. Please try again.");
             }
           },
         },
       ],
       { cancelable: true }
+    );
+  };
+
+  // ✅ Helper function to format time
+  const formatTimeAgo = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    return date.toLocaleDateString();
+  };
+
+  const renderSession = ({ item }) => {
+    const renderRightActions = () => (
+      <TouchableOpacity
+        style={styles.swipeDelete}
+        onPress={() => handleDeleteSession(item.id)}
+      >
+        <Ionicons name="trash" size={24} color={colors.background} />
+        <Text style={styles.swipeText}>Delete</Text>
+      </TouchableOpacity>
+    );
+
+    return (
+      <Swipeable renderRightActions={renderRightActions}>
+        <TouchableOpacity
+          style={styles.sessionItem}
+          onPress={() => handleOpenSession(item.id)}
+        >
+          <View style={styles.sessionHeader}>
+            <Text style={styles.sessionTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={styles.sessionTime}>
+              {formatTimeAgo(item.lastUpdated)}
+            </Text>
+          </View>
+          <Text style={styles.sessionPreview} numberOfLines={2}>
+            {item.lastMessage}
+          </Text>
+          {item.messageCount > 0 && (
+            <View style={styles.sessionFooter}>
+              <Text style={styles.messageCount}>
+                {item.messageCount} message{item.messageCount !== 1 ? "s" : ""}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -119,124 +265,150 @@ export default function ChatSessionsScreen() {
         <FlatList
           data={sessions}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => {
-            const renderRightActions = () => (
-              <TouchableOpacity
-                style={styles.swipeDelete}
-                onPress={() => handleDeleteSession(item.id)}
-              >
-                <Ionicons name="trash" size={24} color="#fff" />
-                <Text style={styles.swipeText}>Delete</Text>
-              </TouchableOpacity>
-            );
-
-            return (
-              <Swipeable renderRightActions={renderRightActions}>
-                <TouchableOpacity
-                  style={styles.sessionItem}
-                  onPress={() => handleOpenSession(item.id)}
-                >
-                  <Text style={styles.sessionTitle}>{item.title}</Text>
-                  <Text style={styles.sessionPreview} numberOfLines={1}>
-                    {item.lastMessage}
-                  </Text>
-                  <Text style={styles.sessionDate}>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </Text>
-                </TouchableOpacity>
-              </Swipeable>
-            );
-          }}
-          contentContainerStyle={{ paddingBottom: 100 }} // so button doesn't overlap
+          renderItem={renderSession}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={48}
+                  color={colors.textTertiary}
+                />
+              </View>
+              <Text style={styles.emptyTitle}>No conversations yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Start a chat with Chester to begin your reflection journey
+              </Text>
+            </View>
+          }
         />
+
         <TouchableOpacity
           style={styles.floatingButton}
           onPress={handleNewSession}
+          disabled={creating}
         >
-          <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
+          <Ionicons
+            name="chatbubble-ellipses"
+            size={28}
+            color={colors.background}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e0b1f", padding: 20 },
-  header: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  newButton: {
-    backgroundColor: "#a48bff",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  newButtonText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  sessionTitle: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  sessionItem: {
-    backgroundColor: "#1f1b36",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  sessionText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  sessionPreview: {
-    color: "#aaa",
-    fontSize: 15, // previously 13
-    marginTop: 6,
-  },
-  sessionDate: {
-    color: "#666",
-    fontSize: 12,
-    marginTop: 4,
-  },
   safeArea: {
     flex: 1,
-    backgroundColor: "#0e0b1f",
-    paddingTop: 10, // Optional
-    paddingBottom: 12, // Avoid overlap with tab bar
+    backgroundColor: colors.background,
+  },
+
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+
+  header: {
+    ...typography.largeTitle,
+    color: colors.textPrimary,
+    fontWeight: "700",
+    marginBottom: spacing.xl,
+  },
+
+  listContent: {
+    paddingBottom: 100, // Space for floating button and tab bar
+  },
+
+  sessionItem: {
+    ...cardStyles.withMaroonBorder,
+    marginBottom: spacing.md,
+  },
+
+  sessionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.sm,
+  },
+
+  sessionTitle: {
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: spacing.md,
+  },
+
+  sessionTime: {
+    ...typography.caption1,
+    color: colors.textTertiary,
+    fontWeight: "500",
+  },
+
+  sessionPreview: {
+    ...typography.subheadline,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+
+  sessionFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+
+  messageCount: {
+    ...typography.caption2,
+    color: colors.textTertiary,
+    fontWeight: "500",
+  },
+
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxxl * 2,
+    paddingHorizontal: spacing.xl,
+  },
+
+  emptyIcon: {
+    marginBottom: spacing.xl,
+  },
+
+  emptyTitle: {
+    ...typography.title3,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.textTertiary,
+    textAlign: "center",
+    lineHeight: 22,
   },
 
   floatingButton: {
     position: "absolute",
     bottom: 30,
-    right: 20,
-    backgroundColor: "#a48bff",
+    right: spacing.xl,
+    backgroundColor: colors.primary,
     width: 60,
     height: 60,
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 10, // Android
-    zIndex: 999, // iOS
+    ...shadows.floating,
   },
 
-  chatIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-  },
   swipeDelete: {
-    backgroundColor: "#ff4d4d",
+    backgroundColor: colors.systemRed,
     justifyContent: "center",
     alignItems: "center",
     width: 80,
@@ -244,9 +416,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
+
   swipeText: {
-    color: "#fff",
-    fontSize: 12,
-    marginTop: 4,
+    ...typography.caption1,
+    color: colors.background,
+    marginTop: spacing.xs,
+    fontWeight: "500",
   },
 });

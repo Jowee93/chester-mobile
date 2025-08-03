@@ -8,6 +8,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import {
+  colors,
+  typography,
+  spacing,
+  buttonStyles,
+  inputStyles,
+} from "../styles/designSystem";
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -27,13 +34,13 @@ export default function SignupScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.header}>Join Chester 🪷</Text>
       <Text style={styles.subtext}>
-        Let’s begin your self-reflection journey
+        Let's begin your self-reflection journey
       </Text>
 
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.textTertiary}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -42,7 +49,7 @@ export default function SignupScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password (min 6 chars)"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.textTertiary}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -65,30 +72,56 @@ export default function SignupScreen({ navigation }) {
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0e0b1f",
+    backgroundColor: colors.background,
     justifyContent: "center",
-    padding: 24,
+    paddingHorizontal: spacing.screenPadding,
   },
-  header: { fontSize: 28, color: "white", fontWeight: "bold", marginBottom: 8 },
-  subtext: { fontSize: 14, color: "#ccc", marginBottom: 24 },
+
+  header: {
+    ...typography.largeTitle,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+
+  subtext: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xxxl,
+    textAlign: "center",
+  },
+
   input: {
-    backgroundColor: "#1f1b36",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    color: "white",
+    ...inputStyles.standard,
+    marginBottom: spacing.lg,
   },
+
   button: {
-    backgroundColor: "#a48bff",
-    borderRadius: 12,
-    paddingVertical: 14,
+    ...buttonStyles.primary,
+    marginTop: spacing.lg,
     alignItems: "center",
-    marginTop: 10,
   },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
-  switchText: { color: "#ccc", marginTop: 24, textAlign: "center" },
-  switchLink: { color: "#a48bff", fontWeight: "500" },
+
+  buttonText: {
+    ...typography.headline,
+    color: colors.background,
+    fontWeight: "600",
+  },
+
+  switchText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.xxxl,
+    textAlign: "center",
+  },
+
+  switchLink: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: "600",
+  },
 });

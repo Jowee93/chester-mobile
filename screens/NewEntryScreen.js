@@ -16,6 +16,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import {
+  colors,
+  typography,
+  spacing,
+  buttonStyles,
+  inputStyles,
+  shadows,
+} from "../styles/designSystem";
 
 export default function NewEntryScreen() {
   const route = useRoute();
@@ -86,6 +94,15 @@ export default function NewEntryScreen() {
     fetchUser();
   }, []);
 
+  const getCurrentDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -96,143 +113,187 @@ export default function NewEntryScreen() {
           {/* Top Bar */}
           <View style={styles.topBar}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="chevron-back-outline" size={24} color="#a48bff" />
+              <Ionicons
+                name="chevron-back-outline"
+                size={24}
+                color={colors.primary}
+              />
             </TouchableOpacity>
-            <Text style={styles.dateText}>Sunday, 29 Jun</Text>
+            <Text style={styles.dateText}>{getCurrentDate()}</Text>
             <View style={styles.topRight}>
               {isEditable ? (
-                <>
-                  <Ionicons
-                    name="ellipsis-horizontal"
-                    size={24}
-                    color="white"
-                  />
-                  <TouchableOpacity onPress={handleSave}>
-                    <Text style={styles.doneText}>Done</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.replace("NewEntry", {
-                      editable: true,
-                      title,
-                      content,
-                      images,
-                    })
-                  }
-                >
-                  <Ionicons
-                    name="ellipsis-horizontal"
-                    size={24}
-                    color="#a48bff"
-                  />
+                <TouchableOpacity onPress={handleSave}>
+                  <Text style={styles.saveText}>Save</Text>
                 </TouchableOpacity>
+              ) : (
+                <View />
               )}
             </View>
           </View>
 
-          <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Main Content */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Title Input */}
+            <TextInput
+              style={styles.titleInput}
+              placeholder="Entry title (optional)"
+              placeholderTextColor={colors.textTertiary}
+              value={title}
+              onChangeText={setTitle}
+              editable={isEditable}
+              maxLength={100}
+            />
+
+            {/* Content Input */}
+            <TextInput
+              style={styles.contentInput}
+              placeholder="What's on your mind?"
+              placeholderTextColor={colors.textTertiary}
+              value={content}
+              onChangeText={setContent}
+              multiline
+              textAlignVertical="top"
+              editable={isEditable}
+            />
+
+            {/* Images (if any) */}
             {images.length > 0 && (
-              <View style={styles.imageGrid}>
-                {images.map((img, idx) => (
-                  <Image key={idx} source={img} style={styles.image} />
+              <View style={styles.imagesContainer}>
+                {images.map((imageUri, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: imageUri }}
+                    style={styles.image}
+                  />
                 ))}
               </View>
             )}
 
-            <TextInput
-              style={isEditable ? styles.titleInput : styles.titleRead}
-              placeholder="Title"
-              placeholderTextColor="#aaa"
-              value={title}
-              onChangeText={setTitle}
-              editable={isEditable}
-            />
-
-            <TextInput
-              style={isEditable ? styles.contentInput : styles.contentRead}
-              placeholder="Start writing..."
-              placeholderTextColor="#aaa"
-              value={content}
-              onChangeText={setContent}
-              multiline
-              editable={isEditable}
-              autoFocus={isEditable}
-            />
+            {/* Tools Bar */}
+            {isEditable && (
+              <View style={styles.toolsBar}>
+                <TouchableOpacity style={styles.toolButton}>
+                  <Ionicons
+                    name="camera"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolButton}>
+                  <Ionicons name="mic" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolButton}>
+                  <Ionicons
+                    name="happy"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
-
-          {isEditable && (
-            <View style={styles.toolbar}>
-              <Ionicons name="text" size={22} color="#ccc" />
-              <Ionicons name="sparkles-outline" size={22} color="#ccc" />
-              <Ionicons name="image-outline" size={22} color="#ccc" />
-              <Ionicons name="camera-outline" size={22} color="#ccc" />
-              <Ionicons name="mic-outline" size={22} color="#ccc" />
-              <Ionicons name="location-outline" size={22} color="#ccc" />
-              <Ionicons name="flower-outline" size={22} color="#ccc" />
-            </View>
-          )}
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e0b1f" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
   topBar: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 12,
     justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingTop: spacing.xl,
+    backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
   },
-  topRight: { flexDirection: "row", alignItems: "center", gap: 16 },
-  dateText: { color: "white", fontSize: 16, flex: 1, textAlign: "center" },
-  doneText: { color: "#a48bff", marginLeft: 12 },
-  scroll: { paddingHorizontal: 16 },
-  imageGrid: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 12,
-    marginTop: 8,
+
+  dateText: {
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
   },
-  image: {
-    width: "30%",
-    height: 90,
-    borderRadius: 12,
-    backgroundColor: "#333",
+
+  topRight: {
+    minWidth: 60,
+    alignItems: "flex-end",
   },
+
+  saveText: {
+    ...typography.headline,
+    color: colors.primary,
+    fontWeight: "600",
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+
   titleInput: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "600",
-    marginBottom: 8,
+    ...typography.title2,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
   },
+
   contentInput: {
-    fontSize: 16,
-    color: "white",
+    ...typography.body,
+    color: colors.textPrimary,
+    lineHeight: 24,
+    minHeight: 200,
     textAlignVertical: "top",
-    paddingBottom: 100,
+    marginBottom: spacing.xl,
   },
-  titleRead: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  contentRead: {
-    fontSize: 16,
-    color: "white",
-    marginBottom: 100,
-  },
-  toolbar: {
+
+  imagesContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 12,
-    borderTopColor: "#222",
-    borderTopWidth: 1,
+    flexWrap: "wrap",
+    marginBottom: spacing.xl,
+  },
+
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    marginRight: spacing.md,
+    marginBottom: spacing.md,
+  },
+
+  toolsBar: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingVertical: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.separator,
+  },
+
+  toolButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.backgroundTertiary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.lg,
   },
 });

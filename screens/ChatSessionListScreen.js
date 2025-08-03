@@ -11,6 +11,13 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import {
+  colors,
+  typography,
+  spacing,
+  cardStyles,
+  shadows,
+} from "../styles/designSystem";
 
 export default function ChatSessionListScreen() {
   const navigation = useNavigation();
@@ -75,51 +82,64 @@ export default function ChatSessionListScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
       />
 
       <TouchableOpacity style={styles.fab} onPress={handleNewChat}>
-        <Ionicons name="add" size={28} color="white" />
+        <Ionicons name="add" size={28} color={colors.background} />
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0e0b1f",
+    backgroundColor: colors.background,
   },
+
   list: {
-    padding: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingBottom: 100, // Space for floating button and tab bar
   },
+
   card: {
-    backgroundColor: "#1f1b36",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    ...cardStyles.withMaroonBorder,
+    marginBottom: spacing.md,
   },
+
   title: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
+    marginBottom: spacing.xs,
   },
+
   meta: {
-    color: "#aaa",
-    fontSize: 12,
-    marginTop: 4,
+    ...typography.caption1,
+    color: colors.textTertiary,
+    marginBottom: spacing.xs,
+    fontWeight: "500",
   },
+
   mood: {
-    color: "#7a7aff",
-    fontSize: 12,
-    marginTop: 2,
+    ...typography.subheadline,
+    color: colors.primary,
+    fontWeight: "500",
   },
+
   fab: {
     position: "absolute",
-    right: 20,
+    right: spacing.xl,
     bottom: 30,
-    backgroundColor: "#a48bff",
-    borderRadius: 50,
-    padding: 14,
-    elevation: 6,
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.floating,
   },
 });

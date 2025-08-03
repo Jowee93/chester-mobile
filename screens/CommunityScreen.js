@@ -12,6 +12,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
+import {
+  colors,
+  typography,
+  spacing,
+  cardStyles,
+  shadows,
+} from "../styles/designSystem";
 
 const { height, width } = Dimensions.get("window");
 
@@ -49,7 +56,7 @@ export default function CommunityScreen() {
         <View style={styles.postContainer}>
           <View style={styles.card}>
             <Text style={styles.endText}>
-              ✨ That’s all the posts for today ✨
+              ✨ That's all the posts for today ✨
             </Text>
           </View>
         </View>
@@ -71,7 +78,11 @@ export default function CommunityScreen() {
           >
             <View style={styles.header}>
               <Text style={styles.username}>Anonymous</Text>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={20}
+                color={colors.textTertiary}
+              />
             </View>
 
             <Text style={styles.title}>{item.title || item.mood}</Text>
@@ -89,7 +100,7 @@ export default function CommunityScreen() {
                 <Ionicons
                   name={resonated[item.id] ? "heart" : "heart-outline"}
                   size={24}
-                  color={resonated[item.id] ? "#ff7da0" : "#a48bff"}
+                  color={resonated[item.id] ? colors.systemRed : colors.primary}
                 />
                 <Text style={styles.resonateText}>Resonate</Text>
               </TouchableOpacity>
@@ -101,7 +112,7 @@ export default function CommunityScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0e0b1f" }}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerBar}>
         <Text style={styles.headerText}>Community</Text>
       </View>
@@ -110,89 +121,113 @@ export default function CommunityScreen() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
       />
     </SafeAreaView>
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
-  postContainer: {
-    width: "100%",
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-
-  card: {
-    backgroundColor: "#1a162d",
-    borderRadius: 20,
-    padding: 20,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 
   headerBar: {
     alignItems: "center",
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
   },
+
   headerText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+    ...typography.largeTitle,
+    color: colors.textPrimary,
+    fontWeight: "700",
   },
+
+  listContent: {
+    paddingBottom: 100, // Space for tab bar
+  },
+
+  postContainer: {
+    width: "100%",
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xl,
+    alignItems: "center",
+  },
+
+  card: {
+    ...cardStyles.withMaroonBorder,
+    width: "100%",
+  },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
+
   username: {
-    color: "#a48bff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  title: {
-    color: "white",
-    fontSize: 20,
+    ...typography.subheadline,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: 12,
   },
+
+  title: {
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+  },
+
   content: {
-    color: "#ccc",
-    fontSize: 16,
-    marginBottom: 20,
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+    lineHeight: 22,
   },
+
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   tags: {
     flexDirection: "row",
     flexWrap: "wrap",
     maxWidth: "70%",
   },
+
   tag: {
-    color: "#7a7aff",
-    fontSize: 12,
-    marginRight: 8,
+    ...typography.caption1,
+    color: colors.primary,
+    fontWeight: "500",
+    marginRight: spacing.sm,
   },
+
   resonateBtn: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 20,
+    backgroundColor: colors.backgroundTertiary,
   },
+
   resonateText: {
-    color: "#a48bff",
-    marginLeft: 6,
-    fontSize: 14,
+    ...typography.subheadline,
+    color: colors.primary,
+    marginLeft: spacing.sm,
+    fontWeight: "500",
   },
+
   endText: {
-    color: "#aaa",
-    fontSize: 18,
+    ...typography.body,
+    color: colors.textTertiary,
     textAlign: "center",
+    fontStyle: "italic",
   },
 });
