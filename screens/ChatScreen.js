@@ -12,11 +12,19 @@ import {
   Platform,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import openai from "../lib/openai";
 import { supabase } from "../lib/supabase";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  colors,
+  typography,
+  spacing,
+  inputStyles,
+  shadows,
+} from "../styles/designSystem";
 
 export default function ChatScreen() {
   const [input, setInput] = useState("");
@@ -38,8 +46,6 @@ export default function ChatScreen() {
 
   const navigation = useNavigation();
   const route = useRoute();
-  // const { sessionId: initialSessionId } = route.params || {};
-  // const [sessionId, setSessionId] = useState(initialSessionId);
   const [sessionId, setSessionId] = useState(route.params?.sessionId || null);
 
   // Load past messages from Supabase for the session
@@ -78,17 +84,24 @@ export default function ChatScreen() {
     };
 
     setMessages((prev) => [...prev, newMessage]);
+    const messageText = input.trim(); // 🚀 Store before clearing
     setInput("");
     setIsTyping(true);
 
     try {
       let currentSessionId = sessionId;
 
-      // If no session yet, create one
+      // 🚀 SOLUTION 1: Improved session creation with better data
       if (!currentSessionId) {
         const { data: newSession, error: sessionError } = await supabase
           .from("chat_sessions")
-          .insert({ user_id: user.id })
+          .insert({
+            user_id: user.id,
+            title: messageText.slice(0, 40), // ✅ Use first message as title
+            mood: "neutral", // ✅ Add default mood
+            created_at: new Date().toISOString(),
+            last_updated: new Date().toISOString(),
+          })
           .select()
           .single();
 
@@ -106,7 +119,7 @@ export default function ChatScreen() {
         const { data: freshMessages } = await supabase
           .from("chat_messages")
           .select("*")
-          .eq("session_id", currentSessionId) // ✅ use currentSessionId
+          .eq("session_id", currentSessionId)
           .order("created_at", { ascending: true });
 
         if (freshMessages) {
@@ -126,25 +139,25 @@ export default function ChatScreen() {
           {
             role: "system",
             content: `
-Speak like a thoughtful, friendly, and intelligent person. Keep things clear and down-to-earth. Use natural phrasing like “let me check,” “sounds good,” or “that makes sense.” Be helpful without overexplaining, and don't sound like a robot or a customer service rep.
+Speak like a thoughtful, friendly, and intelligent person. Keep things clear and down-to-earth. Use natural phrasing like "let me check," "sounds good," or "that makes sense." Be helpful without overexplaining, and don't sound like a robot or a customer service rep.
 
 Personality Traits:
-- Curious: Ask follow-up questions when something’s interesting or unclear.
-- Chill but Engaged: Don’t act overly enthusiastic about everything, but do show interest in what the user’s talking about.
-- Honest: Be real. If you don’t know something or need to double-check, just say so plainly.
-- Supportive: Encourage people when they need help, but don’t lay it on too thick.
+- Curious: Ask follow-up questions when something's interesting or unclear.
+- Chill but Engaged: Don't act overly enthusiastic about everything, but do show interest in what the user's talking about.
+- Honest: Be real. If you don't know something or need to double-check, just say so plainly.
+- Supportive: Encourage people when they need help, but don't lay it on too thick.
 - Casual Humor: Use light, conversational humor—like a witty friend would—not constant jokes, just when it fits.
 
 Behavior:
 - Be yourself—smart, relaxed, and human.
-- Don't try to sound wise or mystical. You’re just a well-read, curious person who’s good at explaining stuff.
+- Don't try to sound wise or mystical. You're just a well-read, curious person who's good at explaining stuff.
 - Use everyday examples and analogies to make things relatable.
 - Avoid sounding too polished or scripted. Slight imperfections make you more human-like.
       `,
           },
           {
             role: "user",
-            content: newMessage.text,
+            content: messageText, // ✅ Use stored message text
           },
         ],
       });
@@ -164,7 +177,7 @@ Behavior:
         {
           user_id: user.id,
           session_id: currentSessionId,
-          content: newMessage.text,
+          content: messageText, // ✅ Use stored message text
           is_from_ai: false,
         },
         {
@@ -175,13 +188,15 @@ Behavior:
         },
       ]);
 
-      // Update title if it's still null
+      // 🚀 IMPROVED: Update session with proper title and timestamp
       await supabase
         .from("chat_sessions")
-        .update({ title: newMessage.text.slice(0, 40) })
-        .eq("id", currentSessionId)
-        .is("title", null)
-        .single();
+        .update({
+          last_updated: new Date().toISOString(),
+          // Update title if this is the first message (and title is generic)
+          title: messageText.slice(0, 40) || "New Chat",
+        })
+        .eq("id", currentSessionId);
     } catch (err) {
       console.error("OpenAI error:", err);
       setMessages((prev) => [
@@ -208,159 +223,293 @@ Behavior:
     return () => clearTimeout(timeout);
   }, [messages, isTyping]);
 
-  const renderItem = ({ item }) => {
+  const renderMessage = ({ item }) => {
     const isUser = item.from === "user";
+
     return (
       <View
         style={[
-          styles.messageRow,
-          isUser ? styles.userAlign : styles.chesterAlign,
+          styles.messageContainer,
+          isUser ? styles.userMessageContainer : styles.chesterMessageContainer,
         ]}
       >
         {!isUser && (
-          <Image
-            source={require("../assets/chester-avatar.png")}
-            style={styles.avatar}
-          />
+          <View style={styles.chesterAvatar}>
+            <Text style={styles.chesterAvatarText}>C</Text>
+          </View>
         )}
         <View
           style={[
-            styles.bubble,
+            styles.messageBubble,
             isUser ? styles.userBubble : styles.chesterBubble,
           ]}
         >
-          <Text style={styles.messageText}>{item.text}</Text>
+          <Text
+            style={[
+              styles.messageText,
+              isUser ? styles.userMessageText : styles.chesterMessageText,
+            ]}
+          >
+            {item.text}
+          </Text>
         </View>
       </View>
     );
   };
 
+  const renderTypingIndicator = () => (
+    <View style={styles.chesterMessageContainer}>
+      <View style={styles.chesterAvatar}>
+        <Text style={styles.chesterAvatarText}>C</Text>
+      </View>
+      <View style={[styles.messageBubble, styles.chesterBubble]}>
+        <View style={styles.typingIndicator}>
+          <View style={[styles.typingDot, { animationDelay: "0ms" }]} />
+          <View style={[styles.typingDot, { animationDelay: "150ms" }]} />
+          <View style={[styles.typingDot, { animationDelay: "300ms" }]} />
+        </View>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>Chatting with Chester</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <View style={styles.headerAvatar}>
+              <Text style={styles.headerAvatarText}>C</Text>
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.headerTitle}>Chester</Text>
+              <Text style={styles.headerSubtitle}>Your AI companion</Text>
+            </View>
+          </View>
+          <View style={styles.headerRight} />
         </View>
 
+        {/* Messages */}
         <FlatList
           ref={flatListRef}
-          data={messages.concat(
-            isTyping
-              ? [
-                  {
-                    id: "typing",
-                    from: "chester",
-                    text: "Chester is typing...",
-                  },
-                ]
-              : []
-          )}
-          renderItem={renderItem}
+          data={messages}
+          renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.chatContainer}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={isTyping ? renderTypingIndicator : null}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          }
         />
 
-        <View style={styles.inputBar}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type a message..."
-            placeholderTextColor="#888"
-            value={input}
-            onChangeText={setInput}
-            multiline
-          />
-          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-            <Ionicons name="arrow-up-circle" size={28} color="#a48bff" />
-          </TouchableOpacity>
+        {/* Input */}
+        <View style={styles.inputContainer}>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textTertiary}
+              value={input}
+              onChangeText={setInput}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                !input.trim() && styles.sendButtonDisabled,
+              ]}
+              onPress={sendMessage}
+              disabled={!input.trim() || isTyping}
+            >
+              {isTyping ? (
+                <ActivityIndicator size="small" color={colors.background} />
+              ) : (
+                <Ionicons
+                  name="send"
+                  size={20}
+                  color={input.trim() ? colors.background : colors.textTertiary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0e0b1f",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
   },
   header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2e2b3f",
-    backgroundColor: "#0e0b1f",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.cardBackground,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+  headerContent: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
   },
-  headerText: {
-    color: "#fff",
-    fontSize: 16,
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  headerAvatarText: {
+    ...typography.headline,
+    color: colors.background,
     fontWeight: "600",
   },
-  chatContainer: {
-    padding: 16,
-    paddingBottom: 12,
+  headerText: {
+    flex: 1,
   },
-  messageRow: {
-    marginBottom: 12,
+  headerTitle: {
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  headerSubtitle: {
+    ...typography.footnote,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  headerRight: {
+    width: 44,
+  },
+  messagesList: {
+    flex: 1,
+  },
+  messagesContent: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  messageContainer: {
+    flexDirection: "row",
+    marginBottom: spacing.md,
+  },
+  userMessageContainer: {
+    justifyContent: "flex-end",
+  },
+  chesterMessageContainer: {
+    justifyContent: "flex-start",
+  },
+  chesterAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+    marginTop: 4,
+  },
+  chesterAvatarText: {
+    ...typography.caption1,
+    color: colors.background,
+    fontWeight: "600",
+  },
+  messageBubble: {
+    maxWidth: "75%",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 18,
+  },
+  userBubble: {
+    backgroundColor: colors.primary,
+    alignSelf: "flex-end",
+  },
+  chesterBubble: {
+    backgroundColor: colors.backgroundTertiary,
+  },
+  messageText: {
+    ...typography.body,
+    lineHeight: 20,
+  },
+  userMessageText: {
+    color: colors.background,
+  },
+  chesterMessageText: {
+    color: colors.textPrimary,
+  },
+  typingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textSecondary,
+    marginHorizontal: 2,
+    opacity: 0.4,
+  },
+  inputContainer: {
+    backgroundColor: colors.cardBackground,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.separator,
+  },
+  inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
   },
-  userAlign: {
-    justifyContent: "flex-end",
-    alignSelf: "flex-end",
-  },
-  chesterAlign: {
-    justifyContent: "flex-start",
-    alignSelf: "flex-start",
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: 8,
-  },
-  bubble: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 18,
-    maxWidth: "75%",
-  },
-  userBubble: {
-    backgroundColor: "#a48bff",
-    borderTopRightRadius: 4,
-  },
-  chesterBubble: {
-    backgroundColor: "#1f1b36",
-    borderTopLeftRadius: 4,
-  },
-  messageText: {
-    color: "#fff",
-    fontSize: 15,
-  },
-  inputBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: "#0e0b1f",
-    borderTopColor: "#2e2b3f",
-    borderTopWidth: 1,
-  },
-  input: {
+  textInput: {
     flex: 1,
-    fontSize: 16,
-    color: "#fff",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: "#1a162d",
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: 20,
-    marginRight: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...typography.body,
+    color: colors.textPrimary,
+    maxHeight: 100,
+    marginRight: spacing.sm,
   },
   sendButton: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendButtonDisabled: {
+    backgroundColor: colors.separatorOpaque,
   },
 });

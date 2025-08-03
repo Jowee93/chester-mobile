@@ -11,6 +11,13 @@ import {
 import React, { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { supabase } from "../lib/supabase";
+import {
+  colors,
+  typography,
+  spacing,
+  cardStyles,
+  buttonStyles,
+} from "../styles/designSystem";
 
 export default function InsightsScreen() {
   const [user, setUser] = useState(null);
@@ -73,6 +80,19 @@ export default function InsightsScreen() {
       longestStreak,
     });
   };
+
+  const getUserInitials = () => {
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.[0]?.toUpperCase() || "U";
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -81,11 +101,10 @@ export default function InsightsScreen() {
 
         {/* Avatar + Name */}
         <View style={styles.profileSection}>
-          <Image
-            source={require("../assets/chester-avatar.png")}
-            style={styles.avatar}
-          />
-          <Text style={styles.name}>{user?.email || "Anonymous User"}</Text>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{getUserInitials()}</Text>
+          </View>
+          <Text style={styles.name}>{user?.email}</Text>
         </View>
 
         {/* Stats */}
@@ -123,20 +142,20 @@ export default function InsightsScreen() {
         {/* Settings */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>⚙️ Settings</Text>
-          <TouchableOpacity>
-            <Text style={styles.settingItem}>Edit Profile</Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingItemText}>Edit Profile</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.settingItem}>Notification Preferences</Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingItemText}>Notification Preferences</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.settingItem}>App Theme</Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingItemText}>App Theme</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.settingItem}>About Chester</Text>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingItemText}>About Chester</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
-            <Text style={styles.settingItem}>Log Out</Text>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -144,77 +163,117 @@ export default function InsightsScreen() {
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0e0b1f",
+    backgroundColor: colors.background,
   },
+
   container: {
-    padding: 20,
-    backgroundColor: "#0e0b1f",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
+
   header: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
+    ...typography.largeTitle,
+    color: colors.textPrimary,
+    marginBottom: spacing.xl,
+    textAlign: "center",
   },
+
   profileSection: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: spacing.xxxl,
   },
-  avatar: {
+
+  avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
   },
+
+  avatarText: {
+    ...typography.title2,
+    color: colors.background,
+    fontWeight: "700",
+  },
+
   name: {
-    color: "#fff",
-    fontSize: 18,
+    ...typography.headline,
+    color: colors.textPrimary,
     fontWeight: "600",
   },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: spacing.xxxl,
+    gap: spacing.md,
   },
+
   statCard: {
-    backgroundColor: "#1f1b36",
-    borderRadius: 12,
-    padding: 14,
+    flex: 1,
+    ...cardStyles.standard,
     alignItems: "center",
-    width: "30%",
+    paddingVertical: spacing.lg,
   },
+
   statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#a48bff",
+    ...typography.title2,
+    color: colors.primary,
+    fontWeight: "700",
   },
+
   statLabel: {
-    color: "#ccc",
-    fontSize: 12,
-    marginTop: 4,
+    ...typography.caption1,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    fontWeight: "500",
+    textAlign: "center",
   },
+
   sectionCard: {
-    backgroundColor: "#1a162d",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    ...cardStyles.standard,
+    marginBottom: spacing.xl,
   },
+
   sectionTitle: {
-    color: "#fff",
-    fontSize: 16,
+    ...typography.headline,
+    color: colors.textPrimary,
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
+
   sectionText: {
-    color: "#aaa",
-    fontSize: 14,
+    ...typography.subheadline,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
+
   settingItem: {
-    color: "#a48bff",
-    fontSize: 14,
-    marginTop: 10,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
+  },
+
+  settingItemText: {
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+
+  logoutButton: {
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+  },
+
+  logoutText: {
+    ...typography.body,
+    color: colors.systemRed,
+    fontWeight: "500",
   },
 });

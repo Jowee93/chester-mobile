@@ -11,6 +11,7 @@ import { TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { useFocusEffect } from "@react-navigation/native";
+import { colors, typography, spacing } from "../styles/designSystem";
 
 export default function HomeScreen({ navigation }) {
   const [entries, setEntries] = useState([]);
@@ -131,55 +132,99 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
+// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e0b1f", padding: 16 },
-  title: { color: "white", fontSize: 32, fontWeight: "bold", marginBottom: 12 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.md,
+  },
+
+  header: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+
+  headerText: {
+    ...typography.largeTitle,
+    color: colors.textPrimary,
+    fontWeight: "700",
+  },
+
+  content: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: 100, // Space for tab bar
+  },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.sm,
   },
-  statBox: { alignItems: "center" },
-  statNumber: { color: "#8fb2ff", fontSize: 18, fontWeight: "bold" },
-  statLabel: { color: "white", fontSize: 12 },
-  month: { color: "white", fontSize: 18, marginVertical: 10 },
-  card: {
-    backgroundColor: "#1e1a2d",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  imageGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  image: {
-    width: "32%",
-    height: 100,
-    borderRadius: 12,
-  },
-  entryTitle: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  entryContent: { color: "white", fontSize: 14, marginBottom: 8 },
-  entryDate: { color: "#999", fontSize: 12, textAlign: "left" },
-  header: {
-    paddingTop: 10,
-    paddingBottom: 10,
+
+  statBox: {
     alignItems: "center",
-    backgroundColor: "#0e0b1f",
+    backgroundColor: colors.cardBackground,
+    borderRadius: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    flex: 1,
+    marginHorizontal: spacing.xs,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  headerText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
+
+  statNumber: {
+    ...typography.title2,
+    color: colors.primary,
+    fontWeight: "700",
   },
-  content: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+
+  statLabel: {
+    ...typography.caption1,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+
+  card: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 16,
+    padding: spacing.xl,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+
+  entryTitle: {
+    ...typography.headline,
+    color: colors.textPrimary,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+  },
+
+  entryContent: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    lineHeight: 22,
+  },
+
+  entryDate: {
+    ...typography.caption1,
+    color: colors.textTertiary,
+    fontWeight: "500",
   },
 });
