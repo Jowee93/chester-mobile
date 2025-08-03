@@ -25,6 +25,7 @@ export default function BottomTabs() {
           height: 70,
           backgroundColor: "#fff",
           borderTopWidth: 0,
+          position: "relative",
         },
         tabBarIcon: ({ focused }) => {
           let iconName;
