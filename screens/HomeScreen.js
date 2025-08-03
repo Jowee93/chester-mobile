@@ -84,6 +84,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Journal</Text>
+        {/* <Text style={{ fontFamily: "Nunito", fontSize: 25 }}>Journal</Text> */}
       </View>
 
       <FlatList

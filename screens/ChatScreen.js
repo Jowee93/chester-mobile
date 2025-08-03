@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import openai from "../lib/openai";
 import { supabase } from "../lib/supabase";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   colors,
   typography,
@@ -266,7 +267,7 @@ Behavior:
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {/* Header */}
         <View style={styles.header}>

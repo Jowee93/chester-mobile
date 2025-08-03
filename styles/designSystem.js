@@ -41,88 +41,84 @@ export const colors = {
 };
 
 export const typography = {
-  // 🍎 Apple's Typography Scale (SF Pro inspired)
-
-  // Large Titles
   largeTitle: {
+    fontFamily: "",
     fontSize: 34,
-    fontWeight: "700", // Bold
+    // fontWeight: "700",
     lineHeight: 41,
-    letterSpacing: 0.37,
+    letterSpacing: -0.5,
   },
 
-  // Titles
   title1: {
+    fontFamily: "Inter_18pt-Bold",
     fontSize: 28,
-    fontWeight: "700", // Bold
+    fontWeight: "700",
     lineHeight: 34,
-    letterSpacing: 0.36,
+    letterSpacing: -0.3,
   },
 
   title2: {
+    fontFamily: "Inter_18pt-SemiBold",
     fontSize: 22,
-    fontWeight: "700", // Bold
+    fontWeight: "600",
     lineHeight: 28,
-    letterSpacing: 0.35,
+    letterSpacing: -0.2,
   },
 
   title3: {
+    fontFamily: "Inter_18pt-SemiBold",
     fontSize: 20,
-    fontWeight: "600", // Semibold
+    fontWeight: "600",
     lineHeight: 25,
-    letterSpacing: 0.38,
+    letterSpacing: -0.1,
   },
 
-  // Headlines
   headline: {
+    fontFamily: "Inter_18pt-SemiBold",
     fontSize: 17,
-    fontWeight: "600", // Semibold
+    fontWeight: "600",
     lineHeight: 22,
-    letterSpacing: -0.41,
+    letterSpacing: -0.1,
   },
 
-  // Body Text
   body: {
+    fontFamily: "Inter_18pt-Regular",
     fontSize: 17,
-    fontWeight: "400", // Regular
+    fontWeight: "400",
     lineHeight: 22,
-    letterSpacing: -0.41,
-  },
-
-  callout: {
-    fontSize: 16,
-    fontWeight: "400", // Regular
-    lineHeight: 21,
-    letterSpacing: -0.32,
+    letterSpacing: 0,
   },
 
   subheadline: {
+    fontFamily: "Inter_18pt-Medium",
     fontSize: 15,
-    fontWeight: "400", // Regular
+    fontWeight: "500",
     lineHeight: 20,
-    letterSpacing: -0.24,
+    letterSpacing: 0,
   },
 
   footnote: {
+    fontFamily: "Inter_18pt-Medium",
     fontSize: 13,
-    fontWeight: "400", // Regular
+    fontWeight: "500",
     lineHeight: 18,
-    letterSpacing: -0.08,
+    letterSpacing: 0,
   },
 
-  // Captions
   caption1: {
+    fontFamily: "Inter_18pt-Medium",
     fontSize: 12,
-    fontWeight: "400", // Regular
+    fontWeight: "500",
     lineHeight: 16,
     letterSpacing: 0,
   },
 
   caption2: {
+    fontFamily: "Inter_18pt-Regular",
     fontSize: 11,
-    fontWeight: "400", // Regular
+    fontWeight: "400",
     lineHeight: 13,
-    letterSpacing: 0.07,
+    letterSpacing: 0.1,
   },
 };
 
