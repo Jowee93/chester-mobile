@@ -20,6 +20,7 @@ import {
   cardStyles,
   shadows,
 } from "../styles/designSystem";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height, width } = Dimensions.get("window");
 
@@ -41,6 +42,10 @@ export default function CommunityScreenScroll({ onToggleView }) {
   const [posts, setPosts] = useState([]);
   const [resonated, setResonated] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 70; // Your bottom tab bar height from BottomTabs.js
+  const headerHeight = 100; // Approximate header height
+  const availableHeight = height - headerHeight - tabBarHeight;
 
   useEffect(() => {
     fetchCommunityPosts();
@@ -124,16 +129,17 @@ export default function CommunityScreenScroll({ onToggleView }) {
               <View style={styles.contentCard}>
                 <View style={styles.contentHeader}>
                   <Text style={styles.postContent}>{item.content}</Text>
-                  <View style={styles.moodBadge}>
-                    <Text style={styles.moodText}>{item.mood}</Text>
-                  </View>
                 </View>
               </View>
             </View>
           </TouchableOpacity>
 
           {/* Right Sidebar - Only Resonate */}
+
           <View style={styles.sidebar}>
+            <View style={styles.moodBadge}>
+              <Text style={styles.moodText}>{item.mood}</Text>
+            </View>
             {/* User Avatar */}
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
@@ -252,11 +258,11 @@ export default function CommunityScreenScroll({ onToggleView }) {
           keyExtractor={(item) => item.id.toString()}
           pagingEnabled
           showsVerticalScrollIndicator={false}
-          snapToInterval={height - 100} // Account for header
           snapToAlignment="start"
           decelerationRate="fast"
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
+          snapToInterval={height - 100}
           getItemLayout={(data, index) => ({
             length: height - 100,
             offset: (height - 100) * index,
@@ -316,7 +322,7 @@ const styles = StyleSheet.create({
   },
 
   postContainer: {
-    height: height - 100, // Account for header
+    height: height - 100, // Just account for header now
     width: width,
   },
 
@@ -335,11 +341,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
+    marginTop: -250,
   },
 
   contentDisplay: {
     alignItems: "center",
-    width: "100%",
+    width: "80%",
     paddingHorizontal: spacing.lg,
   },
 
@@ -356,7 +363,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: spacing.md,
+    gap: spacing.lg,
   },
 
   postContent: {
@@ -367,25 +374,28 @@ const styles = StyleSheet.create({
   },
 
   moodBadge: {
-    backgroundColor: colors.primary,
+    // backgroundColor: "rgba(255,255,255,0.9)", // Change to white background
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 16,
     minWidth: 50,
     alignItems: "center",
+    // borderWidth: 2, // Add border
+    // borderColor: colors.background, // White border
+    ...shadows.floating, // Add shadow for more visibility
   },
 
   moodText: {
-    ...typography.caption1,
-    color: colors.background,
+    // ...typography.caption1,
+    color: colors.primary, // Change to maroon text instead of white
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: 24,
   },
 
   sidebar: {
     position: "absolute",
     right: spacing.lg,
-    bottom: 120,
+    bottom: 150,
     alignItems: "center",
     gap: spacing.lg,
   },
@@ -439,8 +449,8 @@ const styles = StyleSheet.create({
   bottomInfo: {
     position: "absolute",
     left: 0,
-    right: 0,
-    bottom: 0,
+    right: 55,
+    bottom: 75,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl + 50, // Account for tab bar
   },
