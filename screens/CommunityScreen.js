@@ -20,12 +20,16 @@ import {
   shadows,
 } from "../styles/designSystem";
 
+// Import the new TikTok-style component
+import CommunityScreenScroll from "./CommunityScreenScroll";
+
 const { height, width } = Dimensions.get("window");
 
 export default function CommunityScreen() {
   const navigation = useNavigation();
   const [posts, setPosts] = useState([]);
   const [resonated, setResonated] = useState({});
+  const [isScrollView, setIsScrollView] = useState(false); // Toggle state
 
   useEffect(() => {
     const fetchCommunityPosts = async () => {
@@ -50,6 +54,13 @@ export default function CommunityScreen() {
     await supabase.rpc("increment_supports", { post_id: id });
   };
 
+  // If TikTok view is enabled, render that component
+  if (isScrollView) {
+    return (
+      <CommunityScreenScroll onToggleView={() => setIsScrollView(false)} />
+    );
+  }
+
   const renderItem = ({ item }) => {
     if (item.type === "end") {
       return (
@@ -72,7 +83,7 @@ export default function CommunityScreen() {
               navigation.navigate("ViewEntry", {
                 entryId: item.id,
                 source: "community",
-                editable: false, // 👈 force read-only mode for community posts
+                editable: false,
               })
             }
           >
@@ -114,8 +125,26 @@ export default function CommunityScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerBar}>
-        <Text style={styles.headerText}>Community</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerText}>Community</Text>
+
+          {/* Toggle Button */}
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setIsScrollView(true)}
+          >
+            <View style={styles.toggleIconContainer}>
+              <Ionicons
+                name="phone-portrait-outline"
+                size={16}
+                color={colors.background}
+              />
+            </View>
+            <Text style={styles.toggleText}>Scroll View</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
       <FlatList
         data={posts}
         renderItem={renderItem}
@@ -127,7 +156,7 @@ export default function CommunityScreen() {
   );
 }
 
-// 🎨 UPDATED STYLES WITH APPLE DESIGN SYSTEM
+// Updated styles with toggle button
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -135,16 +164,47 @@ const styles = StyleSheet.create({
   },
 
   headerBar: {
-    alignItems: "center",
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
     backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
+  },
+
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   headerText: {
     ...typography.largeTitle,
     color: colors.textPrimary,
     fontWeight: "700",
+  },
+
+  toggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    gap: spacing.sm,
+  },
+
+  toggleIconContainer: {
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  toggleText: {
+    ...typography.caption1,
+    color: colors.background,
+    fontWeight: "600",
   },
 
   listContent: {
