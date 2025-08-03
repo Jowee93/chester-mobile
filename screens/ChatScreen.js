@@ -32,6 +32,7 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
   const [user, setUser] = useState(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -51,7 +52,7 @@ export default function ChatScreen() {
   // Load past messages from Supabase for the session
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!sessionId) return;
+      if (!sessionId || isCreatingSession) return;
 
       const { data, error } = await supabase
         .from("chat_messages")
@@ -72,7 +73,7 @@ export default function ChatScreen() {
     };
 
     fetchMessages();
-  }, [sessionId]);
+  }, [sessionId, isCreatingSession]);
 
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
@@ -84,21 +85,22 @@ export default function ChatScreen() {
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    const messageText = input.trim(); // 🚀 Store before clearing
+    const messageText = input.trim();
     setInput("");
     setIsTyping(true);
 
     try {
       let currentSessionId = sessionId;
 
-      // 🚀 SOLUTION 1: Improved session creation with better data
+      // Create session if it doesn't exist
       if (!currentSessionId) {
+        setIsCreatingSession(true);
         const { data: newSession, error: sessionError } = await supabase
           .from("chat_sessions")
           .insert({
             user_id: user.id,
-            title: messageText.slice(0, 40), // ✅ Use first message as title
-            mood: "neutral", // ✅ Add default mood
+            title: messageText.slice(0, 40),
+            mood: "neutral",
             created_at: new Date().toISOString(),
             last_updated: new Date().toISOString(),
           })
@@ -108,6 +110,7 @@ export default function ChatScreen() {
         if (sessionError || !newSession) {
           console.error("Failed to create session:", sessionError);
           setIsTyping(false);
+          setIsCreatingSession(true);
           return;
         }
 
@@ -115,21 +118,8 @@ export default function ChatScreen() {
         setSessionId(newSession.id);
         navigation.setParams({ sessionId: newSession.id });
 
-        // Reload messages for the new sessionId
-        const { data: freshMessages } = await supabase
-          .from("chat_messages")
-          .select("*")
-          .eq("session_id", currentSessionId)
-          .order("created_at", { ascending: true });
-
-        if (freshMessages) {
-          const formatted = freshMessages.map((msg) => ({
-            id: msg.id.toString(),
-            from: msg.is_from_ai ? "chester" : "user",
-            text: msg.content,
-          }));
-          setMessages(formatted);
-        }
+        // ✅ REMOVED: The problematic message reloading section
+        // This was causing the first message to disappear temporarily
       }
 
       // Get Chester reply
@@ -153,11 +143,11 @@ Behavior:
 - Don't try to sound wise or mystical. You're just a well-read, curious person who's good at explaining stuff.
 - Use everyday examples and analogies to make things relatable.
 - Avoid sounding too polished or scripted. Slight imperfections make you more human-like.
-      `,
+          `,
           },
           {
             role: "user",
-            content: messageText, // ✅ Use stored message text
+            content: messageText,
           },
         ],
       });
@@ -177,7 +167,7 @@ Behavior:
         {
           user_id: user.id,
           session_id: currentSessionId,
-          content: messageText, // ✅ Use stored message text
+          content: messageText,
           is_from_ai: false,
         },
         {
@@ -188,12 +178,11 @@ Behavior:
         },
       ]);
 
-      // 🚀 IMPROVED: Update session with proper title and timestamp
+      // Update session with proper title and timestamp
       await supabase
         .from("chat_sessions")
         .update({
           last_updated: new Date().toISOString(),
-          // Update title if this is the first message (and title is generic)
           title: messageText.slice(0, 40) || "New Chat",
         })
         .eq("id", currentSessionId);
